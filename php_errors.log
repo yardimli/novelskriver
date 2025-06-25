@@ -1,0 +1,31 @@
+[25-Jun-2025 04:52:31 UTC] PHP Fatal error:  Uncaught ErrorException: include(F:\GitHub\novelwriter\vendor\composer/../nunomaduro/collision/src/SolutionsRepositories/NullSolutionsRepository.php): Failed to open stream: No such file or directory in F:\GitHub\novelwriter\vendor\composer\ClassLoader.php:576
+Stack trace:
+#0 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleError(2, 'include(F:\\GitH...', 'F:\\GitHub\\novel...', 576)
+#1 F:\GitHub\novelwriter\vendor\composer\ClassLoader.php(576): Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}(2, 'include(F:\\GitH...', 'F:\\GitHub\\novel...', 576)
+#2 F:\GitHub\novelwriter\vendor\composer\ClassLoader.php(576): include('F:\\GitHub\\novel...')
+#3 F:\GitHub\novelwriter\vendor\composer\ClassLoader.php(427): Composer\Autoload\{closure}('F:\\GitHub\\novel...')
+#4 F:\GitHub\novelwriter\vendor\nunomaduro\collision\src\Adapters\Laravel\CollisionServiceProvider.php(51): Composer\Autoload\ClassLoader->loadClass('NunoMaduro\\Coll...')
+#5 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Container\Container.php(908): NunoMaduro\Collision\Adapters\Laravel\CollisionServiceProvider->NunoMaduro\Collision\Adapters\Laravel\{closure}(Object(Illuminate\Foundation\Application), Array)
+#6 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Container\Container.php(795): Illuminate\Container\Container->build(Object(Closure))
+#7 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Foundation\Application.php(986): Illuminate\Container\Container->resolve('NunoMaduro\\Coll...', Array, true)
+#8 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Container\Container.php(731): Illuminate\Foundation\Application->resolve('NunoMaduro\\Coll...', Array)
+#9 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Foundation\Application.php(971): Illuminate\Container\Container->make('NunoMaduro\\Coll...', Array)
+#10 F:\GitHub\novelwriter\vendor\nunomaduro\collision\src\Adapters\Laravel\ExceptionHandler.php(66): Illuminate\Foundation\Application->make('NunoMaduro\\Coll...')
+#11 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php(207): NunoMaduro\Collision\Adapters\Laravel\ExceptionHandler->renderForConsole(Object(Symfony\Component\Console\Output\ConsoleOutput), Object(ErrorException))
+#12 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php(189): Illuminate\Foundation\Bootstrap\HandleExceptions->renderForConsole(Object(ErrorException))
+#13 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleException(Object(ErrorException))
+#14 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}(Object(ErrorException))
+#15 {main}
+  thrown in F:\GitHub\novelwriter\vendor\composer\ClassLoader.php on line 576
+[25-Jun-2025 04:52:31 UTC] PHP Fatal error:  Uncaught ErrorException: include(F:\GitHub\novelwriter\vendor\composer/../symfony/error-handler/Error/FatalError.php): Failed to open stream: No such file or directory in F:\GitHub\novelwriter\vendor\composer\ClassLoader.php:576
+Stack trace:
+#0 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleError(2, 'include(F:\\GitH...', 'F:\\GitHub\\novel...', 576)
+#1 F:\GitHub\novelwriter\vendor\composer\ClassLoader.php(576): Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}(2, 'include(F:\\GitH...', 'F:\\GitHub\\novel...', 576)
+#2 F:\GitHub\novelwriter\vendor\composer\ClassLoader.php(576): include('F:\\GitHub\\novel...')
+#3 F:\GitHub\novelwriter\vendor\composer\ClassLoader.php(427): Composer\Autoload\{closure}('F:\\GitHub\\novel...')
+#4 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php(244): Composer\Autoload\ClassLoader->loadClass('Symfony\\Compone...')
+#5 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php(231): Illuminate\Foundation\Bootstrap\HandleExceptions->fatalErrorFromPhpError(Array, 0)
+#6 F:\GitHub\novelwriter\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php(255): Illuminate\Foundation\Bootstrap\HandleExceptions->handleShutdown()
+#7 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->Illuminate\Foundation\Bootstrap\{closure}()
+#8 {main}
+  thrown in F:\GitHub\novelwriter\vendor\composer\ClassLoader.php on line 576
