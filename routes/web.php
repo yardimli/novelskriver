@@ -11,8 +11,10 @@
 	use App\Http\Controllers\DesignerController;
 	use App\Http\Controllers\FavoriteController;
 	use App\Http\Controllers\HomeController;
+	use App\Http\Controllers\NovelController;
 	use App\Http\Controllers\PageController;
 	use App\Http\Controllers\ProfileController;
+	use App\Http\Controllers\SeriesController;
 	use App\Http\Controllers\ShopController;
 	use App\Http\Controllers\UserDesignController;
 	use Illuminate\Support\Facades\Route;
@@ -81,6 +83,15 @@
 
 	Route::middleware('auth')->group(function () {
 		Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+
+
+		// Novel Creation Routes
+		Route::get('/novels/create', [NovelController::class, 'create'])->name('novels.create');
+		Route::post('/novels', [NovelController::class, 'store'])->name('novels.store');
+		Route::post('/novels/generate-title', [NovelController::class, 'generateTitle'])->name('novels.generate-title');
+
+		// Series Creation (for AJAX)
+		Route::post('/series', [SeriesController::class, 'store'])->name('series.store');
 
 		Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 		Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

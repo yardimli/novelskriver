@@ -5,7 +5,7 @@
 			<div class="col-xl-3 col-lg-4 col-12">
 				<div class="mb-4">
 					<a href="#" class="text-inverse">
-						<img src="{{ asset('theme/assets/images/logo/logo.svg') }}" alt="logo" />
+						<img src="{{ asset('theme/assets/images/logo/novelskriver-logo.png') }}" alt="logo" />
 					</a>
 					<div class="mt-4">
 						<p>
@@ -74,24 +74,21 @@
 		</div>
 	</div>
 </footer>
-
 <div class="btn-scroll-top">
 	<svg class="progress-square svg-content" width="100%" height="100%" viewBox="0 0 40 40">
 		<path d="M8 1H32C35.866 1 39 4.13401 39 8V32C39 35.866 35.866 39 32 39H8C4.13401 39 1 35.866 1 32V8C1 4.13401 4.13401 1 8 1Z" />
 	</svg>
 </div>
-
 <!-- Libs JS -->
 <script src="{{ asset('theme/assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('theme/assets/libs/simplebar/dist/simplebar.min.js') }}"></script>
 <script src="{{ asset('theme/assets/libs/headhesive/dist/headhesive.min.js') }}"></script>
-
 <!-- Theme JS -->
 <script src="{{ asset('theme/assets/js/theme.min.js') }}"></script>
-
 <script src="{{ asset('theme/assets/js/vendors/partical.js') }}"></script>
 <script src="{{ asset('theme/assets/libs/embla-carousel/embla-carousel.umd.js') }}"></script>
 <script src="{{ asset('theme/assets/libs/embla-carousel-auto-scroll/embla-carousel-auto-scroll.umd.js') }}"></script>
 <script src="{{ asset('theme/assets/js/vendors/embla.js') }}"></script>
 <script src="{{ asset('theme/assets/libs/scrollcue/scrollCue.min.js') }}"></script>
 <script src="{{ asset('theme/assets/js/vendors/scrollcue.js') }}"></script>
+@stack('scripts')

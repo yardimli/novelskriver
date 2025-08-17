@@ -1,60 +1,72 @@
 <?php
 
-namespace App\Http\Controllers;
+	namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+	use App\Http\Requests\ProfileUpdateRequest;
+	use Illuminate\Http\RedirectResponse;
+	use Illuminate\Http\Request;
+	use Illuminate\Support\Facades\Auth;
+	use Illuminate\Support\Facades\Redirect;
+	use Illuminate\View\View;
 
-class ProfileController extends Controller
-{
-    /**
-     * Display the user's profile form.
-     */
-    public function edit(Request $request): View
-    {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
-    }
+	class ProfileController extends Controller
+	{
+		/**
+		 * Display the user's profile form.
+		 */
+		public function edit(Request $request): View
+		{
+			return view('profile.edit', [
+				'user' => $request->user(),
+			]);
+		}
 
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
-    {
-        $request->user()->fill($request->validated());
+		/**
+		 * Update the user's profile information.
+		 *
+		 * Note: This assumes you have created a migration to add the new columns
+		 * (first_name, last_name, phone, birthday, address, country, state, city, zip)
+		 * to your 'users' table and added them to the $fillable array in the User model.
+		 */
+		public function update(ProfileUpdateRequest $request): RedirectResponse
+		{
+			// The request is already validated by ProfileUpdateRequest
+			$user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
+			// The 'name' field is a combination of first and last name
+			$user->name = $request->input('first_name') . ' ' . $request->input('last_name');
 
-        $request->user()->save();
+			// Fill other model attributes from the request
+			$user->fill($request->except(['name', 'first_name', 'last_name']));
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
-    }
+			// If the user changes their email, we must reset the verification status.
+			if ($user->isDirty('email')) {
+				$user->email_verified_at = null;
+			}
 
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(Request $request): RedirectResponse
-    {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
-        ]);
+			$user->save();
 
-        $user = $request->user();
+			return Redirect::route('profile.edit')->with('status', 'profile-updated');
+		}
 
-        Auth::logout();
+		/**
+		 * Delete the user's account.
+		 */
+		public function destroy(Request $request): RedirectResponse
+		{
+			$request->validateWithBag('userDeletion', [
+				'password' => ['required', 'current_password'],
+			]);
 
-        $user->delete();
+			$user = $request->user();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+			Auth::logout();
 
-        return Redirect::to('/');
-    }
-}
+			$user->delete();
+
+			$request->session()->invalidate();
+			$request->session()->regenerateToken();
+
+			return Redirect::to('/');
+		}
+	}

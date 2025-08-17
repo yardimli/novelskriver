@@ -1,13 +1,13 @@
 <header>
 	<nav class="navbar navbar-expand-lg navbar-light w-100">
 		<div class="container px-3">
-			<a class="navbar-brand" href="{{ url('/') }}"><img src="{{ asset('theme/assets/images/logo/logo.svg') }}" alt /></a>
+			<a class="navbar-brand" href="{{ url('/') }}"><img src="{{ asset('theme/assets/images/logo/novelskriver-logo.png') }}" alt /></a>
 			<button class="navbar-toggler offcanvas-nav-btn" type="button">
 				<i class="bi bi-list"></i>
 			</button>
 			<div class="offcanvas offcanvas-start offcanvas-nav" style="width: 20rem">
 				<div class="offcanvas-header">
-					<a href="{{ url('/') }}" class="text-inverse"><img src="{{ asset('theme/assets/images/logo/logo.svg') }}" alt /></a>
+					<a href="{{ url('/') }}" class="text-inverse"><img src="{{ asset('theme/assets/images/logo/novelskriver-logo.png') }}" alt /></a>
 					<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 				</div>
 				<div class="offcanvas-body pt-0 align-items-center">
@@ -27,8 +27,13 @@
 					
 					</ul>
 					<div class="mt-3 mt-lg-0 d-flex align-items-center">
-						<a href="{{route('login')}}" class="btn btn-light mx-2">Login</a>
-						<a href="{{route('register')}}" class="btn btn-primary">Create account</a>
+						@auth
+							<a href="{{ route('dashboard') }}" class="btn btn-light mx-2">Dashboard</a>
+							<a href="{{ route('novels.create') }}" class="btn btn-primary">Create New Novel</a>
+						@else
+							<a href="{{route('login')}}" class="btn btn-light mx-2">Login</a>
+							<a href="{{route('register')}}" class="btn btn-primary">Create account</a>
+						@endauth
 					</div>
 				</div>
 			</div>

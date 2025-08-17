@@ -2,16 +2,17 @@
 
 	namespace App\Models;
 
-	use Illuminate\Contracts\Auth\MustVerifyEmail; // Import this
+	use Illuminate\Contracts\Auth\MustVerifyEmail;
 	use Illuminate\Database\Eloquent\Factories\HasFactory;
+	use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
 	use Illuminate\Foundation\Auth\User as Authenticatable;
 	use Illuminate\Notifications\Notifiable;
 	use Laravel\Sanctum\HasApiTokens;
-	use App\Mail\PasswordResetEmail; // Add this
-	use Illuminate\Support\Facades\Mail; // Add this
+	use App\Mail\PasswordResetEmail;
+	use Illuminate\Support\Facades\Mail;
 
-	class User extends Authenticatable implements MustVerifyEmail // Implement this
+	class User extends Authenticatable implements MustVerifyEmail
 	{
 		use HasApiTokens, HasFactory, Notifiable;
 
@@ -25,13 +26,22 @@
 		 */
 		protected $fillable = [
 			'name',
+			'first_name',
+			'last_name',
 			'email',
 			'password',
 			'user_type',
-			'provider_name', // Add this
-			'provider_id', // Add this
-			'avatar', // Add this
-			'email_verified_at', // Ensure this is fillable
+			'provider_name',
+			'provider_id',
+			'avatar',
+			'email_verified_at',
+			'phone',
+			'birthday',
+			'address',
+			'country',
+			'state',
+			'city',
+			'zip',
 		];
 
 		/**
@@ -53,6 +63,7 @@
 			'email_verified_at' => 'datetime',
 			'password' => 'hashed',
 			'user_type' => 'integer',
+			'birthday' => 'date',
 		];
 
 		/**
@@ -65,24 +76,59 @@
 			return $this->user_type === self::TYPE_ADMIN;
 		}
 
-		public function favorites(): HasMany
-		{
-			return $this->hasMany(Favorite::class);
-		}
-
-		public function userDesigns(): HasMany
-		{
-			return $this->hasMany(UserDesign::class);
-		}
-
 		/**
 		 * Send the password reset notification.
 		 *
-		 * @param  string  $token
+		 * @param string $token
 		 * @return void
 		 */
 		public function sendPasswordResetNotification($token)
 		{
 			Mail::to($this->getEmailForPasswordReset())->send(new PasswordResetEmail($this, $token));
 		}
+
+		// START: ADDED RELATIONSHIPS
+
+		/**
+		 * Get the novels that the user owns.
+		 */
+		public function novels(): HasMany
+		{
+			return $this->hasMany(Novel::class);
+		}
+
+		/**
+		 * Get the series that the user owns.
+		 */
+		public function series(): HasMany
+		{
+			return $this->hasMany(Series::class);
+		}
+
+		/**
+		 * Get the novels that the user is a collaborator on.
+		 */
+		public function collaborations(): BelongsToMany
+		{
+			return $this->belongsToMany(Novel::class, 'novel_user')
+				->withPivot('role')
+				->withTimestamps();
+		}
+
+		/**
+		 * Get the writing stats for the user.
+		 */
+		public function writingStats(): HasMany
+		{
+			return $this->hasMany(WritingStat::class);
+		}
+
+		/**
+		 * Get the AI logs for the user.
+		 */
+		public function aiLogs(): HasMany
+		{
+			return $this->hasMany(AiLog::class);
+		}
+		// END: ADDED RELATIONSHIPS
 	}
