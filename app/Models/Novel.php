@@ -105,7 +105,7 @@ class Novel extends Model
 	 */
 	public function collaborators(): BelongsToMany
 	{
-		return $this->belongsToMany(User::class, 'novel_user')
+		return $this->belongsTo(User::class, 'novel_user')
 			->withPivot('role')
 			->withTimestamps();
 	}
@@ -124,5 +124,15 @@ class Novel extends Model
 	public function aiLogs(): HasMany
 	{
 		return $this->hasMany(AiLog::class);
+	}
+
+	/**
+	 * Get the images for the novel.
+	 * @return HasMany
+	 */
+	// NEW: Added relationship to images.
+	public function images(): HasMany
+	{
+		return $this->hasMany(Image::class);
 	}
 }

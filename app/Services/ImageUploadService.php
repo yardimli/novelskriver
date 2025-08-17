@@ -2,11 +2,15 @@
 
 	namespace App\Services;
 
+	// MODIFIED: Added necessary imports for the new method.
+	use Illuminate\Http\UploadedFile as IlluminateUploadedFile;
+	use Illuminate\Support\Facades\Http;
 	use Symfony\Component\HttpFoundation\File\UploadedFile as BaseUploadedFile;
 	use Illuminate\Support\Facades\Storage;
 	use Illuminate\Support\Str;
 	use Intervention\Image\Laravel\Facades\Image as InterventionImageFacade;
 	use Illuminate\Support\Facades\Log;
+	use Throwable;
 
 	class ImageUploadService
 	{
@@ -135,6 +139,72 @@
 				'original_path' => $originalPath,
 				'thumbnail_path' => $thumbnailPath,
 			];
+		}
+
+		/**
+		 * Downloads an image from a URL and stores it using the standard upload process.
+		 * @param string $url The URL of the image to download.
+		 * @param string $uploadConfigKey Key to fetch path and dimension configs.
+		 * @param string|null $customSubdirectory Optional subdirectory.
+		 * @param string|null $customFilenameBase Optional base name for the file.
+		 * @return array ['original_path' => ?string, 'thumbnail_path' => ?string]
+		 * @throws \Exception
+		 */
+		// NEW: Method to handle downloading and storing an image from a URL.
+		public function storeImageFromUrl(
+			string  $url,
+			string  $uploadConfigKey,
+			?string $customSubdirectory = null,
+			?string $customFilenameBase = null
+		): array {
+			try {
+				$response = Http::timeout(60)->get($url);
+				$response->throw(); // Throw an exception for non-2xx responses
+
+				$tempFile = tmpfile();
+				if ($tempFile === false) {
+					throw new \Exception('Could not create temporary file.');
+				}
+				fwrite($tempFile, $response->body());
+				$tempFilePath = stream_get_meta_data($tempFile)['uri'];
+
+				// Determine filename and extension from URL
+				$pathInfo = pathinfo(parse_url($url, PHP_URL_PATH));
+				$originalFilename = $pathInfo['basename'] ?? 'image.tmp';
+
+				// Get mime type from response headers if available, otherwise guess
+				$mimeType = $response->header('Content-Type');
+				if (!$mimeType || strpos($mimeType, 'image/') !== 0) {
+					$finfo = finfo_open(FILEINFO_MIME_TYPE);
+					$mimeType = finfo_file($finfo, $tempFilePath);
+					finfo_close($finfo);
+				}
+
+				$uploadedFile = new IlluminateUploadedFile(
+					$tempFilePath,
+					$originalFilename,
+					$mimeType,
+					null,
+					true // Mark as test file to allow moving it
+				);
+
+				$paths = $this->uploadImageWithThumbnail(
+					$uploadedFile,
+					$uploadConfigKey,
+					null,
+					null,
+					$customSubdirectory,
+					$customFilenameBase
+				);
+
+				fclose($tempFile); // This will delete the temporary file
+
+				return $paths;
+
+			} catch (Throwable $e) {
+				Log::error("Failed to store image from URL '{$url}': " . $e->getMessage());
+				throw new \Exception("Failed to store image from URL: " . $e->getMessage(), 0, $e);
+			}
 		}
 
 		/**

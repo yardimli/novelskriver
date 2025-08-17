@@ -37,40 +37,6 @@
 				'thumb_h' => 150
 			],
 
-			'user_design_previews' => [
-				'disk' => 'public',
-				// Base directories; user_id will be appended as a subdirectory by the service
-				'originals_root' => 'user_designs/previews',
-				'thumbnails_root' => 'user_designs/thumbnails',
-				'thumb_w' => 400, // Generate a thumbnail
-				'thumb_h' => 400,
-				'thumb_quality' => 85,
-			],
-
-			// Templates
-			'templates_cover_image' => [
-				'originals' => 'templates/cover_images'
-			],
-			'templates_full_cover_image' => [
-				'originals' => 'templates/full_cover_images/originals',
-				'thumbnails' => 'templates/full_cover_images/thumbnails',
-				'thumb_w' => 200,
-				'thumb_h' => 150
-			],
-
-			'elements_main' => [
-				'originals' => 'elements/originals',
-				'thumbnails' => 'elements/thumbnails',
-				'thumb_w' => 100,
-				'thumb_h' => 100
-			],
-			'overlays_main' => [
-				'originals' => 'overlays/originals',
-				'thumbnails' => 'overlays/thumbnails',
-				'thumb_w' => 100,
-				'thumb_h' => 100
-			],
-
 			'blog_post_images' => [
 				'originals' => 'blog/posts/originals',
 				'thumbnails' => 'blog/posts/thumbnails',
@@ -79,6 +45,14 @@
 				'thumb_quality' => 80,
 			],
 
+			// NEW: Added configuration for AI-generated novel covers.
+			'novel_covers' => [
+				'originals' => 'novels/covers/originals',
+				'thumbnails' => 'novels/covers/thumbnails',
+				'thumb_w' => 400,
+				'thumb_h' => 600, // Portrait aspect ratio for covers
+				'thumb_quality' => 85,
+			],
 		],
 
 

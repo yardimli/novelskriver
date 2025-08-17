@@ -37,4 +37,16 @@
 			'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
 		],
 
+		'openrouter' => [
+			'key' => env('OPEN_ROUTER_API_KEY'),
+		],
+
+		'fal' => [
+			'key' => env('FAL_API_KEY'),
+		],
+
+		'python' => [
+			'executable' => env('PYTHON_EXECUTABLE_PATH', 'python3'),
+		],
+
 	];
