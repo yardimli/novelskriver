@@ -32,7 +32,8 @@
 					<p class="lead text-muted">Wonderful! You're about to write your next masterpiece, so let's get started.</p>
 				</div>
 				
-				<form action="{{ route('novels.store') }}" method="POST">
+				{{-- MODIFIED: Added an ID to the form for easier selection in JS. --}}
+				<form action="{{ route('novels.store') }}" method="POST" id="createNovelForm">
 					@csrf
 					<div class="book-details-card shadow-sm">
 						<h4 class="mb-4 text-uppercase fw-bold" style="font-size: 0.9rem; letter-spacing: 1px;">Book Details</h4>
@@ -223,6 +224,18 @@
 				newSeriesTitleInput.value = '';
 				newSeriesTitleInput.classList.remove('is-invalid');
 			});
+			
+			// NEW: Handle Create Novel button state on form submission.
+			const createNovelForm = document.getElementById('createNovelForm');
+			if (createNovelForm) {
+				createNovelForm.addEventListener('submit', function() {
+					const submitButton = createNovelForm.querySelector('button[type="submit"]');
+					if (submitButton) {
+						submitButton.disabled = true;
+						submitButton.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...`;
+					}
+				});
+			}
 		});
 	</script>
 @endpush

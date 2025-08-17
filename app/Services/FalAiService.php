@@ -49,7 +49,7 @@
 					->timeout(180) // 3-minute timeout for image generation
 					->post($this->apiBaseUrl . '/fal-ai/qwen-image', [
 						'prompt' => $prompt,
-						'image_size' => 'portrait_4_3', // As requested
+						'image_size' => 'portrait_16_9',
 					]);
 
 				Log::info('Fal.ai API request made.', [

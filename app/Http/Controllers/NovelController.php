@@ -2,7 +2,6 @@
 
 	namespace App\Http\Controllers;
 
-	// MODIFIED: Replaced OpenAiService with LlmController and added new services/models.
 	use App\Http\Controllers\LlmController;
 	use App\Models\Image;
 	use App\Models\Novel;
@@ -132,7 +131,6 @@
 		 * @param  LlmController $llm
 		 * @return \Illuminate\Http\JsonResponse
 		 */
-		// MODIFIED: Switched from OpenAiService to the more generic LlmController.
 		public function generateTitle(LlmController $llm)
 		{
 			// Use the model specified in the .env file.
