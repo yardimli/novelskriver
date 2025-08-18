@@ -3,15 +3,14 @@ import forms from '@tailwindcss/forms';
 
 /** @type {import('tailwindcss').Config} */
 export default {
-    // MODIFIED: Changed darkMode strategy to 'class' to allow manual toggling.
     darkMode: 'class',
     
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
-        './public/js/novel-editor.js',
-        './public/js/codex-entry-editor.js', // NEW: Added new JS file for scanning.
+        './public/js/novel-editor/**/*.js',
+        './public/js/codex-entry-editor.js',
     ],
     
     theme: {

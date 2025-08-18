@@ -30,13 +30,13 @@
 	<link href="{{ asset('theme/assets/libs/bootstrap-icons/font/bootstrap-icons.min.css') }}" rel="stylesheet" />
 	<link rel="stylesheet" href="{{ asset('theme/assets/fonts/css/boxicons.min.css') }}" />
 	
-	<script src="{{ asset('/js/novel-editor.js') }}"></script>
+	{{-- MODIFIED: Changed script tag to load the new modular entry point. --}}
+	<script type="module" src="{{ asset('/js/novel-editor/main.js') }}"></script>
 	<script src="{{ asset('/js/codex-entry-editor.js') }}"></script>
 	
 	@vite(['resources/css/editor.css'])
 
 </head>
-{{-- MODIFIED: Added data-novel-id for JavaScript to use for localStorage keying. --}}
 <body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden" data-novel-id="{{ $novel->id }}">
 
 {{-- The main "desktop" area where windows will live --}}
