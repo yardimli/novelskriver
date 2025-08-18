@@ -30,7 +30,6 @@
 				'sections' => fn ($query) => $query->orderBy('order'),
 				'sections.chapters' => fn ($query) => $query->orderBy('order'),
 				'codexCategories' => fn ($query) => $query->withCount('entries')->orderBy('name'),
-				// MODIFIED: Eager load the 'image' relationship for each codex entry.
 				'codexCategories.entries' => fn ($query) => $query->with('image')->orderBy('title'),
 			]);
 

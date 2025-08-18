@@ -1,5 +1,6 @@
 <!doctype html>
-<html class="">
+{{-- MODIFIED: Added h-full class to the html tag to ensure the body and desktop elements can correctly calculate their full height. --}}
+<html class="h-full">
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
@@ -30,7 +31,6 @@
 	<link href="{{ asset('theme/assets/libs/bootstrap-icons/font/bootstrap-icons.min.css') }}" rel="stylesheet" />
 	<link rel="stylesheet" href="{{ asset('theme/assets/fonts/css/boxicons.min.css') }}" />
 	
-	{{-- MODIFIED: Changed script tag to load the new modular entry point. --}}
 	<script type="module" src="{{ asset('/js/novel-editor/main.js') }}"></script>
 	<script src="{{ asset('/js/codex-entry-editor.js') }}"></script>
 	
@@ -39,12 +39,16 @@
 </head>
 <body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden" data-novel-id="{{ $novel->id }}">
 
-{{-- The main "desktop" area where windows will live --}}
-<div id="desktop" class="relative w-full h-full">
-	{{-- Windows will be dynamically inserted here by JavaScript --}}
+{{-- NEW: A container for the desktop to create a new stacking context.
+     Its z-index (z-10) is lower than the taskbar (z-50), so no window inside it can ever overlap the taskbar. --}}
+<div id="desktop-container" class="relative w-full h-full z-10">
+	{{-- The main "desktop" area where windows will live --}}
+	<div id="desktop" class="relative w-full h-full">
+		{{-- Windows will be dynamically inserted here by JavaScript --}}
+	</div>
 </div>
 
-{{-- The "taskbar" at the bottom for minimized windows --}}
+{{-- MODIFIED: The taskbar now has a z-index of 50, placing it above the desktop container. --}}
 <div id="taskbar" class="absolute bottom-0 left-0 w-full h-12 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center px-2 gap-2 z-50 border-t border-gray-200 dark:border-gray-700">
 	
 	{{-- "Open Windows" menu button and popup. --}}
@@ -52,15 +56,15 @@
 		<button id="open-windows-btn" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none rounded-lg text-sm p-2.5">
 			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25A2.25 2.25 0 0 1 5.25 3h9.75a2.25 2.25 0 0 1 2.25 2.25Z" /></svg>
 		</button>
-		<div id="open-windows-menu" class="hidden absolute bottom-full mb-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+		{{-- MODIFIED: The menu's z-index is 60, ensuring it appears above the taskbar and all windows. --}}
+		<div id="open-windows-menu" class="hidden absolute bottom-full mb-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-60">
 			<ul id="open-windows-list" class="max-h-80 overflow-y-auto">
 				{{-- Window list will be populated by JS --}}
 			</ul>
 		</div>
 	</div>
 	
-	{{-- Container for minimized windows to keep them on the left. --}}
-	<div id="minimized-windows-container" class="flex items-center gap-2">
+	<div id="minimized-windows-container" class="flex items-center gap-2 flex-grow min-w-0">
 		{{-- Minimized windows will be dynamically inserted here --}}
 	</div>
 	

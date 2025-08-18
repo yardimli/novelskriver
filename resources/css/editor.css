@@ -18,9 +18,9 @@
     @apply border-gray-500;
 }
 
-
+/* MODIFIED: Removed fixed width (w-64) to allow for flexible sizing in the taskbar. */
 .window-minimized {
-    @apply w-64 h-10 shadow-lg cursor-pointer;
+    @apply h-10 shadow-lg cursor-pointer;
 }
 
 /* Helper class to disable transitions during drag/resize operations for a smooth experience. */

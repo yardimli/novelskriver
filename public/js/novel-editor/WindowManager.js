@@ -14,6 +14,8 @@ export default class WindowManager {
 		this.activeWindow = null;
 		this.highestZIndex = 10;
 		this.windowCounter = 0;
+		// NEW: Define the default sort order for specific minimized windows.
+		this.minimizedOrder = ['outline-window', 'codex-window'];
 	}
 	
 	/**
@@ -152,10 +154,14 @@ export default class WindowManager {
 	close(windowId) {
 		const win = this.windows.get(windowId);
 		if (win) {
+			// NEW: Check if the window was minimized before removing it.
+			const wasMinimized = win.isMinimized;
 			win.element.remove();
 			this.windows.delete(windowId);
-			const taskbarItem = this.minimizedContainer.querySelector(`[data-window-id="${windowId}"]`);
-			if (taskbarItem) taskbarItem.remove();
+			// MODIFIED: Instead of manually removing the taskbar item, refresh the whole taskbar.
+			if (wasMinimized) {
+				this.updateTaskbar();
+			}
 			this.saveState();
 		}
 	}
@@ -167,15 +173,22 @@ export default class WindowManager {
 		const win = this.windows.get(windowId);
 		if (!win || win.isMinimized) return;
 		
+		// NEW: If the window isn't maximized, save its current geometry as the original state
+		// so it can be restored correctly.
+		if (!win.isMaximized) {
+			win.originalRect = {
+				x: win.element.offsetLeft,
+				y: win.element.offsetTop,
+				width: win.element.offsetWidth,
+				height: win.element.offsetHeight
+			};
+		}
+		
 		win.isMinimized = true;
 		win.element.classList.add('hidden');
 		
-		const taskbarItem = document.createElement('button');
-		taskbarItem.className = 'window-minimized bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded px-3 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 transition-colors flex items-center gap-2';
-		taskbarItem.innerHTML = `<div class="w-5 h-5 flex-shrink-0">${win.icon || ''}</div><span class="truncate">${win.title}</span>`;
-		taskbarItem.dataset.windowId = windowId;
-		taskbarItem.addEventListener('click', () => this.restore(windowId));
-		this.minimizedContainer.appendChild(taskbarItem);
+		// MODIFIED: Centralized taskbar management.
+		this.updateTaskbar();
 		this.saveState();
 	}
 	
@@ -190,8 +203,8 @@ export default class WindowManager {
 		win.element.classList.remove('hidden');
 		this.focus(windowId);
 		
-		const taskbarItem = this.minimizedContainer.querySelector(`[data-window-id="${windowId}"]`);
-		if (taskbarItem) taskbarItem.remove();
+		// MODIFIED: Instead of manually removing one item, refresh the whole taskbar.
+		this.updateTaskbar();
 		this.saveState();
 	}
 	
@@ -297,14 +310,16 @@ export default class WindowManager {
 	saveState() {
 		const windowsState = [];
 		this.windows.forEach((win, id) => {
+			// MODIFIED: Always use `originalRect` for position and dimensions to ensure
+			// that minimized or maximized windows save their "restored" state correctly.
 			const state = {
 				id: id,
 				title: win.title,
 				icon: win.icon,
-				x: win.isMaximized ? win.originalRect.x : win.element.offsetLeft,
-				y: win.isMaximized ? win.originalRect.y : win.element.offsetTop,
-				width: win.isMaximized ? win.originalRect.width : win.element.offsetWidth,
-				height: win.isMaximized ? win.originalRect.height : win.element.offsetHeight,
+				x: win.originalRect.x,
+				y: win.originalRect.y,
+				width: win.originalRect.width,
+				height: win.originalRect.height,
 				zIndex: parseInt(win.element.style.zIndex, 10),
 				isMinimized: win.isMinimized,
 				isMaximized: win.isMaximized
@@ -359,7 +374,6 @@ export default class WindowManager {
 				} catch (e) {
 					content = `<p class="p-4 text-red-500">Error loading content.</p>`;
 				}
-				// NEW: Handle restoring chapter windows.
 			} else if (state.id.startsWith('chapter-')) {
 				const chapterId = state.id.replace('chapter-', '');
 				try {
@@ -407,6 +421,43 @@ export default class WindowManager {
 	}
 	
 	/**
+	 * NEW: Redraws the entire taskbar area for minimized windows.
+	 * This ensures correct sorting and responsive widths.
+	 */
+	updateTaskbar() {
+		const minimized = [];
+		this.windows.forEach((win, id) => {
+			if (win.isMinimized) {
+				minimized.push({ id, title: win.title, icon: win.icon });
+			}
+		});
+		
+		// Sort the windows: predefined items first, then alphabetically.
+		minimized.sort((a, b) => {
+			const order = this.minimizedOrder;
+			const indexA = order.indexOf(a.id);
+			const indexB = order.indexOf(b.id);
+			
+			if (indexA !== -1 && indexB !== -1) return indexA - indexB; // Both are special
+			if (indexA !== -1) return -1; // a is special, b is not
+			if (indexB !== -1) return 1;  // b is special, a is not
+			return a.title.localeCompare(b.title); // Neither is special, sort by title
+		});
+		
+		this.minimizedContainer.innerHTML = '';
+		
+		minimized.forEach(item => {
+			const taskbarItem = document.createElement('button');
+			// These flex classes allow the items to grow and shrink to fit the available space.
+			taskbarItem.className = 'window-minimized bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded px-3 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 transition-colors flex items-center gap-2 flex-shrink min-w-[120px] max-w-[256px] flex-grow basis-0';
+			taskbarItem.innerHTML = `<div class="w-5 h-5 flex-shrink-0">${item.icon || ''}</div><span class="truncate">${item.title}</span>`;
+			taskbarItem.dataset.windowId = item.id;
+			taskbarItem.addEventListener('click', () => this.restore(item.id));
+			this.minimizedContainer.appendChild(taskbarItem);
+		});
+	}
+	
+	/**
 	 * Creates the default set of windows if no state is saved.
 	 */
 	createDefaultWindows() {
@@ -442,5 +493,111 @@ export default class WindowManager {
 				closable: false
 			});
 		}
+	}
+	
+	/**
+	 * NEW: Helper to reposition and resize a window, updating its state.
+	 * @param {string} windowId The ID of the window to reposition.
+	 * @param {number} x The new X coordinate.
+	 * @param {number} y The new Y coordinate.
+	 * @param {number} width The new width.
+	 * @param {number} height The new height.
+	 */
+	reposition(windowId, x, y, width, height) {
+		const win = this.windows.get(windowId);
+		if (!win) return;
+		
+		// Restore if minimized, as it's being arranged now.
+		if (win.isMinimized) {
+			this.restore(windowId);
+		}
+		
+		// Update element style
+		win.element.style.left = `${x}px`;
+		win.element.style.top = `${y}px`;
+		win.element.style.width = `${width}px`;
+		win.element.style.height = `${height}px`;
+		
+		// Update internal state
+		win.isMaximized = false;
+		win.originalRect = { x, y, width, height };
+		
+		this.focus(windowId);
+	}
+	
+	/**
+	 * NEW: Arranges open windows into a predefined layout.
+	 */
+	arrangeWindows() {
+		const desktopWidth = this.desktop.clientWidth;
+		const availableHeight = this.desktop.clientHeight - this.taskbar.offsetHeight;
+		const padding = 8;
+		
+		// --- Left Column ---
+		const leftColumnWidth = desktopWidth * 0.3 - padding * 1.5;
+		const outlineWindow = this.windows.get('outline-window');
+		const codexWindow = this.windows.get('codex-window');
+		
+		if (outlineWindow) {
+			const outlineHeight = availableHeight * 0.6 - padding * 1.5;
+			this.reposition('outline-window', padding, padding, leftColumnWidth, outlineHeight);
+		}
+		
+		if (codexWindow) {
+			// Position below outline, or at top if outline is closed.
+			const outlineHeight = (outlineWindow ? availableHeight * 0.6 : 0);
+			const codexY = outlineHeight + padding;
+			const codexHeight = availableHeight - codexY - padding;
+			this.reposition('codex-window', padding, codexY, leftColumnWidth, codexHeight);
+		}
+		
+		// --- Right Column ---
+		const chapters = [];
+		const codexEntries = [];
+		
+		this.windows.forEach((win, id) => {
+			if (id.startsWith('chapter-')) {
+				chapters.push({ id, ...win });
+			}
+			if (id.startsWith('codex-entry-')) {
+				codexEntries.push({ id, ...win });
+			}
+		});
+		
+		// Sort chapters and entries by their database ID to maintain order.
+		const sortByIdNumber = (a, b) => {
+			const numA = parseInt(a.id.split('-').pop(), 10);
+			const numB = parseInt(b.id.split('-').pop(), 10);
+			return numA - numB;
+		};
+		chapters.sort(sortByIdNumber);
+		codexEntries.sort(sortByIdNumber);
+		
+		const rightColumnItems = [...chapters, ...codexEntries];
+		if (rightColumnItems.length === 0) {
+			this.saveState();
+			return;
+		}
+		
+		const rightColumnsStartX = leftColumnWidth + padding * 2;
+		const rightColumnsTotalWidth = desktopWidth - rightColumnsStartX - padding;
+		const itemHeight = availableHeight * 0.25 - padding;
+		let currentY = padding;
+		let currentX = rightColumnsStartX;
+		let rowCount = 0;
+		let columnCount = Math.ceil( rightColumnItems.length / 4); // Calculate how many rows we can fit.
+		let columnWidth = rightColumnsTotalWidth / columnCount;
+		rightColumnItems.forEach(item => {
+			this.reposition(item.id, currentX, currentY, columnWidth, itemHeight);
+			currentY += itemHeight + padding;
+			rowCount++;
+			if (rowCount >= 4) {
+				currentY = padding;
+				currentX += columnWidth + padding;
+				rowCount = 0;
+			}
+		});
+		
+		this.saveState();
 	}
 }
