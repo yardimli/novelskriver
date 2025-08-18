@@ -93,6 +93,9 @@
 		// Series Creation (for AJAX)
 		Route::post('/series', [SeriesController::class, 'store'])->name('series.store');
 
+		// NEW: Novel Structure Generation
+		Route::post('/novels/{novel}/generate-structure', [NovelController::class, 'generateStructure'])->name('novels.generate-structure');
+
 		Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 		Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 		Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
