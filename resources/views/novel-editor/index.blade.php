@@ -31,13 +31,13 @@
 	<link rel="stylesheet" href="{{ asset('theme/assets/fonts/css/boxicons.min.css') }}" />
 	
 	<script src="{{ asset('/js/novel-editor.js') }}"></script>
-	{{-- NEW: Include the script for codex entry window interactions. --}}
 	<script src="{{ asset('/js/codex-entry-editor.js') }}"></script>
 	
 	@vite(['resources/css/editor.css'])
 
 </head>
-<body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden">
+{{-- MODIFIED: Added data-novel-id for JavaScript to use for localStorage keying. --}}
+<body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden" data-novel-id="{{ $novel->id }}">
 
 {{-- The main "desktop" area where windows will live --}}
 <div id="desktop" class="relative w-full h-full">
@@ -45,10 +45,9 @@
 </div>
 
 {{-- The "taskbar" at the bottom for minimized windows --}}
-{{-- MODIFIED: Restructured the taskbar for left/right alignment and added the open windows menu. --}}
 <div id="taskbar" class="absolute bottom-0 left-0 w-full h-12 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center px-2 gap-2 z-50 border-t border-gray-200 dark:border-gray-700">
 	
-	{{-- NEW: "Open Windows" menu button and popup. --}}
+	{{-- "Open Windows" menu button and popup. --}}
 	<div class="relative">
 		<button id="open-windows-btn" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none rounded-lg text-sm p-2.5">
 			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25A2.25 2.25 0 0 1 5.25 3h9.75a2.25 2.25 0 0 1 2.25 2.25Z" /></svg>
@@ -60,7 +59,7 @@
 		</div>
 	</div>
 	
-	{{-- NEW: Container for minimized windows to keep them on the left. --}}
+	{{-- Container for minimized windows to keep them on the left. --}}
 	<div id="minimized-windows-container" class="flex items-center gap-2">
 		{{-- Minimized windows will be dynamically inserted here --}}
 	</div>

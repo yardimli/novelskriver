@@ -6,10 +6,12 @@
  */
 document.addEventListener('DOMContentLoaded', () => {
 	class WindowManager {
-		constructor(desktop, taskbar) {
+		// MODIFIED: Constructor now accepts novelId for state persistence.
+		constructor(desktop, taskbar, novelId) {
 			this.desktop = desktop;
 			this.taskbar = taskbar;
-			// NEW: A dedicated container for minimized window icons.
+			this.novelId = novelId;
+			this.storageKey = `novel-editor-windows-${this.novelId}`;
 			this.minimizedContainer = document.getElementById('minimized-windows-container');
 			this.windows = new Map();
 			this.activeWindow = null;
@@ -19,13 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		
 		/**
 		 * Creates a new window on the desktop.
-		 * MODIFIED: Added 'icon' and 'closable' parameters.
 		 */
 		createWindow({ id, title, content, x, y, width, height, icon, closable = true }) {
 			this.windowCounter++;
 			const windowId = id || `window-${this.windowCounter}`;
 			
-			// If window already exists, focus it instead of creating a new one.
 			if (this.windows.has(windowId)) {
 				this.focus(windowId);
 				return;
@@ -42,14 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
 			win.style.top = `${y}px`;
 			win.style.zIndex = this.highestZIndex++;
 			
-			// Title Bar
 			const titleBar = document.createElement('div');
 			titleBar.className = 'flex items-center justify-between h-10 bg-gray-100 dark:bg-gray-900/70 px-3 cursor-move border-b border-gray-200 dark:border-gray-700 flex-shrink-0';
 			
 			const controls = document.createElement('div');
 			controls.className = 'flex items-center gap-2';
 			
-			// NEW: Conditionally create the close button.
 			const controlButtons = [];
 			if (closable) {
 				controlButtons.push(this.createControlButton('bg-red-500', () => this.close(windowId), 'close'));
@@ -58,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			controlButtons.push(this.createControlButton('bg-green-500', () => this.maximize(windowId), 'maximize'));
 			controls.append(...controlButtons);
 			
-			// Wrapper for icon and title to keep them together.
 			const titleWrapper = document.createElement('div');
 			titleWrapper.className = 'flex items-center overflow-hidden';
 			
@@ -72,18 +69,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			titleWrapper.append(iconEl, titleText);
 			
-			// Spacer to balance the controls on the left, ensuring the title is centered.
 			const rightSpacer = document.createElement('div');
-			rightSpacer.style.width = '64px'; // Approx width of controls.
+			rightSpacer.style.width = '64px';
 			
 			titleBar.append(controls, titleWrapper, rightSpacer);
 			
-			// Content Area
 			const contentArea = document.createElement('div');
 			contentArea.className = 'flex-grow overflow-auto p-1';
 			contentArea.innerHTML = content;
 			
-			// Resize Handle
 			const resizeHandle = document.createElement('div');
 			resizeHandle.className = 'resize-handle';
 			
@@ -106,15 +100,12 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			win.addEventListener('mousedown', () => this.focus(windowId), true);
 			
+			this.saveState(); // NEW: Save state after creating a window.
 			return windowId;
 		}
 		
 		/**
 		 * Helper to create window control buttons (close, minimize, maximize).
-		 * @param {string} colorClass - The background color class for the button.
-		 * @param {Function} onClick - The function to call on click.
-		 * @param {string} type - The type of button ('close', 'minimize', 'maximize') to determine the icon.
-		 * @returns {HTMLButtonElement}
 		 */
 		createControlButton(colorClass, onClick, type) {
 			const btn = document.createElement('button');
@@ -154,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (win) {
 				win.element.style.zIndex = this.highestZIndex++;
 				this.activeWindow = windowId;
+				this.saveState(); // NEW: Save state on focus change.
 			}
 		}
 		
@@ -167,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				this.windows.delete(windowId);
 				const taskbarItem = this.minimizedContainer.querySelector(`[data-window-id="${windowId}"]`);
 				if (taskbarItem) taskbarItem.remove();
+				this.saveState(); // NEW: Save state after closing a window.
 			}
 		}
 		
@@ -185,8 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			taskbarItem.innerHTML = `<div class="w-5 h-5 flex-shrink-0">${win.icon || ''}</div><span class="truncate">${win.title}</span>`;
 			taskbarItem.dataset.windowId = windowId;
 			taskbarItem.addEventListener('click', () => this.restore(windowId));
-			// MODIFIED: Append to the dedicated container instead of the whole taskbar.
 			this.minimizedContainer.appendChild(taskbarItem);
+			this.saveState(); // NEW: Save state after minimizing.
 		}
 		
 		/**
@@ -202,6 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			const taskbarItem = this.minimizedContainer.querySelector(`[data-window-id="${windowId}"]`);
 			if (taskbarItem) taskbarItem.remove();
+			this.saveState(); // NEW: Save state after restoring.
 		}
 		
 		/**
@@ -220,8 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				win.isMaximized = false;
 			} else {
 				// Maximize
-				const rect = win.element.getBoundingClientRect();
-				win.originalRect = { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
+				win.originalRect = {
+					x: win.element.offsetLeft,
+					y: win.element.offsetTop,
+					width: win.element.offsetWidth,
+					height: win.element.offsetHeight
+				};
 				win.element.style.width = '100%';
 				win.element.style.height = `calc(100% - ${this.taskbar.offsetHeight}px)`;
 				win.element.style.left = '0';
@@ -229,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				win.isMaximized = true;
 			}
 			this.focus(windowId);
+			this.saveState(); // NEW: Save state after maximizing/restoring.
 		}
 		
 		/**
@@ -246,6 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				win.classList.remove('dragging');
 				document.removeEventListener('mousemove', onMouseMove);
 				document.removeEventListener('mouseup', onMouseUp);
+				this.saveState(); // NEW: Save state after dragging.
 			};
 			
 			handle.addEventListener('mousedown', (e) => {
@@ -278,6 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				win.classList.remove('dragging');
 				document.removeEventListener('mousemove', onMouseMove);
 				document.removeEventListener('mouseup', onMouseUp);
+				this.saveState(); // NEW: Save state after resizing.
 			};
 			
 			handle.addEventListener('mousedown', (e) => {
@@ -292,49 +293,155 @@ document.addEventListener('DOMContentLoaded', () => {
 				document.addEventListener('mouseup', onMouseUp);
 			});
 		}
+		
+		// NEW: Method to save the state of all windows to localStorage.
+		saveState() {
+			const windowsState = [];
+			this.windows.forEach((win, id) => {
+				const state = {
+					id: id,
+					title: win.title,
+					icon: win.icon,
+					x: win.isMaximized ? win.originalRect.x : win.element.offsetLeft,
+					y: win.isMaximized ? win.originalRect.y : win.element.offsetTop,
+					width: win.isMaximized ? win.originalRect.width : win.element.offsetWidth,
+					height: win.isMaximized ? win.originalRect.height : win.element.offsetHeight,
+					zIndex: parseInt(win.element.style.zIndex, 10),
+					isMinimized: win.isMinimized,
+					isMaximized: win.isMaximized,
+				};
+				windowsState.push(state);
+			});
+			localStorage.setItem(this.storageKey, JSON.stringify(windowsState));
+		}
+		
+		// NEW: Method to load window states from localStorage.
+		async loadState() {
+			const savedState = localStorage.getItem(this.storageKey);
+			if (!savedState) {
+				this.createDefaultWindows();
+				return;
+			}
+			
+			const windows = JSON.parse(savedState);
+			if (!windows || windows.length === 0) {
+				this.createDefaultWindows();
+				return;
+			}
+			
+			// Sort by z-index to create them in the correct stacking order.
+			windows.sort((a, b) => a.zIndex - b.zIndex);
+			
+			for (const state of windows) {
+				let content = '';
+				let closable = true;
+				let icon = state.icon;
+				let title = state.title;
+				
+				if (state.id === 'outline-window') {
+					const template = document.getElementById('outline-window-template');
+					if (template) content = template.innerHTML;
+					closable = false;
+				} else if (state.id === 'codex-window') {
+					const template = document.getElementById('codex-window-template');
+					if (template) content = template.innerHTML;
+					closable = false;
+				} else if (state.id.startsWith('codex-entry-')) {
+					const entryId = state.id.replace('codex-entry-', '');
+					try {
+						const response = await fetch(`/novels/codex-entries/${entryId}`);
+						if (response.ok) {
+							content = await response.text();
+						} else {
+							content = `<p class="p-4 text-red-500">Error loading content.</p>`;
+						}
+					} catch (e) {
+						content = `<p class="p-4 text-red-500">Error loading content.</p>`;
+					}
+				}
+				
+				if (content) {
+					this.createWindow({
+						id: state.id,
+						title: title,
+						content: content,
+						x: state.x,
+						y: state.y,
+						width: state.width,
+						height: state.height,
+						icon: icon,
+						closable: closable,
+					});
+					
+					const win = this.windows.get(state.id);
+					if (win) {
+						win.element.style.zIndex = state.zIndex;
+						// Set originalRect from saved state before potentially maximizing.
+						win.originalRect = { x: state.x, y: state.y, width: state.width, height: state.height };
+						if (state.isMaximized) {
+							this.maximize(state.id);
+						}
+						if (state.isMinimized) {
+							this.minimize(state.id);
+						}
+					}
+				}
+			}
+			// After creating all, find the highest z-index to continue from there.
+			const maxZ = Math.max(...windows.map(w => w.zIndex || 0), 10);
+			this.highestZIndex = maxZ + 1;
+		}
+		
+		// NEW: Method to create the default set of windows if no state is saved.
+		createDefaultWindows() {
+			const outlineIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>`;
+			const codexIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>`;
+			
+			const outlineTemplate = document.getElementById('outline-window-template');
+			if (outlineTemplate) {
+				this.createWindow({
+					id: 'outline-window',
+					title: 'Novel Outline',
+					content: outlineTemplate.innerHTML,
+					x: 50,
+					y: 50,
+					width: 500,
+					height: 600,
+					icon: outlineIcon,
+					closable: false,
+				});
+			}
+			
+			const codexTemplate = document.getElementById('codex-window-template');
+			if (codexTemplate) {
+				this.createWindow({
+					id: 'codex-window',
+					title: 'Codex',
+					content: codexTemplate.innerHTML,
+					x: 600,
+					y: 80,
+					width: 450,
+					height: 550,
+					icon: codexIcon,
+					closable: false,
+				});
+			}
+		}
 	}
 	
 	const desktop = document.getElementById('desktop');
 	const taskbar = document.getElementById('taskbar');
-	const windowManager = new WindowManager(desktop, taskbar);
+	// MODIFIED: Pass novel ID to WindowManager for state persistence.
+	const novelId = document.body.dataset.novelId;
+	const windowManager = new WindowManager(desktop, taskbar, novelId);
 	
 	// Icons for the windows (Heroicons - Outline).
-	const outlineIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>`;
-	const codexIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>`;
 	const entryIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>`;
 	
-	// Create initial windows from templates in the HTML.
-	const outlineTemplate = document.getElementById('outline-window-template');
-	if (outlineTemplate) {
-		windowManager.createWindow({
-			id: 'outline-window',
-			title: 'Novel Outline',
-			content: outlineTemplate.innerHTML,
-			x: 50,
-			y: 50,
-			width: 500,
-			height: 600,
-			icon: outlineIcon,
-			closable: false, // MODIFIED: This window cannot be closed.
-		});
-	}
+	// MODIFIED: Load state from localStorage instead of creating default windows directly.
+	windowManager.loadState();
 	
-	const codexTemplate = document.getElementById('codex-window-template');
-	if (codexTemplate) {
-		windowManager.createWindow({
-			id: 'codex-window',
-			title: 'Codex',
-			content: codexTemplate.innerHTML,
-			x: 600,
-			y: 80,
-			width: 450,
-			height: 550,
-			icon: codexIcon,
-			closable: false, // MODIFIED: This window cannot be closed.
-		});
-	}
-	
-	// --- NEW: Open Codex Entry Window Logic ---
+	// --- Open Codex Entry Window Logic ---
 	desktop.addEventListener('click', async (event) => {
 		const entryButton = event.target.closest('.js-open-codex-entry');
 		if (!entryButton) return;
@@ -343,9 +450,13 @@ document.addEventListener('DOMContentLoaded', () => {
 		const entryTitle = entryButton.dataset.entryTitle;
 		const windowId = `codex-entry-${entryId}`;
 		
-		// If window already exists, just focus it.
 		if (windowManager.windows.has(windowId)) {
-			windowManager.focus(windowId);
+			const win = windowManager.windows.get(windowId);
+			if (win.isMinimized) {
+				windowManager.restore(windowId);
+			} else {
+				windowManager.focus(windowId);
+			}
 			return;
 		}
 		
@@ -356,7 +467,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 			const content = await response.text();
 			
-			// Stagger new window positions
 			const openWindows = document.querySelectorAll('[id^="codex-entry-"]').length;
 			const offsetX = 850 + (openWindows * 30);
 			const offsetY = 120 + (openWindows * 30);
@@ -370,7 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				width: 600,
 				height: 450,
 				icon: entryIcon,
-				closable: true, // This window can be closed.
+				closable: true,
 			});
 			
 		} catch (error) {
@@ -403,13 +513,13 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 	
-	// --- NEW: "Open Windows" Menu Logic ---
+	// --- "Open Windows" Menu Logic ---
 	const openWindowsBtn = document.getElementById('open-windows-btn');
 	const openWindowsMenu = document.getElementById('open-windows-menu');
 	const openWindowsList = document.getElementById('open-windows-list');
 	
 	function populateOpenWindowsMenu() {
-		openWindowsList.innerHTML = ''; // Clear existing items.
+		openWindowsList.innerHTML = '';
 		
 		if (windowManager.windows.size === 0) {
 			openWindowsList.innerHTML = `<li class="px-4 py-2 text-sm text-gray-500">No open windows.</li>`;
@@ -428,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				} else {
 					windowManager.focus(windowId);
 				}
-				openWindowsMenu.classList.add('hidden'); // Close menu on selection.
+				openWindowsMenu.classList.add('hidden');
 			});
 			
 			li.appendChild(button);
@@ -444,7 +554,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		openWindowsMenu.classList.toggle('hidden');
 	});
 	
-	// Close the menu if clicking outside of it.
 	document.addEventListener('click', (e) => {
 		if (!openWindowsMenu.classList.contains('hidden') && !openWindowsMenu.contains(e.target) && !openWindowsBtn.contains(e.target)) {
 			openWindowsMenu.classList.add('hidden');

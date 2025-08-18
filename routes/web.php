@@ -7,13 +7,13 @@
 	use App\Http\Controllers\Auth\SocialLoginController;
 	use App\Http\Controllers\BlogController;
 	use App\Http\Controllers\ChangelogController;
-	use App\Http\Controllers\CodexEntryController; // NEW: Import the new controller.
+	use App\Http\Controllers\CodexEntryController;
 	use App\Http\Controllers\CoverController;
 	use App\Http\Controllers\DesignerController;
 	use App\Http\Controllers\FavoriteController;
 	use App\Http\Controllers\HomeController;
 	use App\Http\Controllers\NovelController;
-	use App\Http\Controllers\NovelEditorController; // NEW: Import the new controller.
+	use App\Http\Controllers\NovelEditorController;
 	use App\Http\Controllers\PageController;
 	use App\Http\Controllers\ProfileController;
 	use App\Http\Controllers\SeriesController;
@@ -98,12 +98,14 @@
 		// Novel Structure Generation
 		Route::post('/novels/{novel}/generate-structure', [NovelController::class, 'generateStructure'])->name('novels.generate-structure');
 
-		// NEW: Novel Editor Route
+		// Novel Editor Route
 		Route::get('/novels/{novel}/edit', [NovelEditorController::class, 'index'])->name('novels.edit');
 
-		// NEW: Codex Entry Routes
+		// Codex Entry Routes
 		Route::get('/novels/codex-entries/{codexEntry}', [CodexEntryController::class, 'show'])->name('codex-entries.show');
 		Route::post('/codex-entries/{codexEntry}/generate-image', [CodexEntryController::class, 'generateImage'])->name('codex-entries.generate-image');
+		// NEW: Route for manual image uploads.
+		Route::post('/codex-entries/{codexEntry}/upload-image', [CodexEntryController::class, 'uploadImage'])->name('codex-entries.upload-image');
 
 		Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 		Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
