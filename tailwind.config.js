@@ -11,6 +11,7 @@ export default {
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
         './public/js/novel-editor.js',
+        './public/js/codex-entry-editor.js', // NEW: Added new JS file for scanning.
     ],
     
     theme: {

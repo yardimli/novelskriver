@@ -8,13 +8,16 @@
 			</h3>
 			<div class="mt-2 space-y-2">
 				@forelse($category->entries as $entry)
-					{{-- MODIFIED: Added hover effect for better interactivity. --}}
-					<div class="p-2 rounded bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+					{{-- MODIFIED: Changed div to a button to make it clickable and added data attributes. --}}
+					<button type="button"
+					        class="js-open-codex-entry w-full text-left p-2 rounded bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+					        data-entry-id="{{ $entry->id }}"
+					        data-entry-title="{{ $entry->title }}">
 						<h4 class="font-semibold">{{ $entry->title }}</h4>
 						@if($entry->description)
 							<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $entry->description }}</p>
 						@endif
-					</div>
+					</button>
 				@empty
 					<p class="text-sm text-gray-500 px-2">No entries in this category yet.</p>
 				@endforelse

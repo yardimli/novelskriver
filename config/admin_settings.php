@@ -53,6 +53,15 @@
 				'thumb_h' => 600, // Portrait aspect ratio for covers
 				'thumb_quality' => 85,
 			],
+
+			// NEW: Added configuration for novel codex entry images.
+			'novel_codex_entries' => [
+				'originals' => 'novels/codex/originals',
+				'thumbnails' => 'novels/codex/thumbnails',
+				'thumb_w' => 300, // Square aspect ratio
+				'thumb_h' => 300,
+				'thumb_quality' => 85,
+			],
 		],
 
 

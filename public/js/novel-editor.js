@@ -301,6 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Icons for the windows (Heroicons - Outline).
 	const outlineIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>`;
 	const codexIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>`;
+	const entryIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>`;
 	
 	// Create initial windows from templates in the HTML.
 	const outlineTemplate = document.getElementById('outline-window-template');
@@ -332,6 +333,51 @@ document.addEventListener('DOMContentLoaded', () => {
 			closable: false, // MODIFIED: This window cannot be closed.
 		});
 	}
+	
+	// --- NEW: Open Codex Entry Window Logic ---
+	desktop.addEventListener('click', async (event) => {
+		const entryButton = event.target.closest('.js-open-codex-entry');
+		if (!entryButton) return;
+		
+		const entryId = entryButton.dataset.entryId;
+		const entryTitle = entryButton.dataset.entryTitle;
+		const windowId = `codex-entry-${entryId}`;
+		
+		// If window already exists, just focus it.
+		if (windowManager.windows.has(windowId)) {
+			windowManager.focus(windowId);
+			return;
+		}
+		
+		try {
+			const response = await fetch(`/novels/codex-entries/${entryId}`);
+			if (!response.ok) {
+				throw new Error('Failed to load codex entry details.');
+			}
+			const content = await response.text();
+			
+			// Stagger new window positions
+			const openWindows = document.querySelectorAll('[id^="codex-entry-"]').length;
+			const offsetX = 850 + (openWindows * 30);
+			const offsetY = 120 + (openWindows * 30);
+			
+			windowManager.createWindow({
+				id: windowId,
+				title: entryTitle,
+				content: content,
+				x: offsetX,
+				y: offsetY,
+				width: 600,
+				height: 450,
+				icon: entryIcon,
+				closable: true, // This window can be closed.
+			});
+			
+		} catch (error) {
+			console.error('Error opening codex entry window:', error);
+			alert(error.message);
+		}
+	});
 	
 	// --- Theme Toggling Logic ---
 	const themeToggleBtn = document.getElementById('theme-toggle');

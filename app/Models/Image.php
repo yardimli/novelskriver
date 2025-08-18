@@ -21,6 +21,7 @@
 		protected $fillable = [
 			'user_id',
 			'novel_id',
+			'codex_entry_id', // NEW: Added codex_entry_id.
 			'image_local_path',
 			'thumbnail_local_path',
 			'remote_url',
@@ -42,5 +43,13 @@
 		public function novel(): BelongsTo
 		{
 			return $this->belongsTo(Novel::class);
+		}
+
+		/**
+		 * NEW: Get the codex entry this image is associated with.
+		 */
+		public function codexEntry(): BelongsTo
+		{
+			return $this->belongsTo(CodexEntry::class);
 		}
 	}

@@ -7,6 +7,7 @@
 	use App\Http\Controllers\Auth\SocialLoginController;
 	use App\Http\Controllers\BlogController;
 	use App\Http\Controllers\ChangelogController;
+	use App\Http\Controllers\CodexEntryController; // NEW: Import the new controller.
 	use App\Http\Controllers\CoverController;
 	use App\Http\Controllers\DesignerController;
 	use App\Http\Controllers\FavoriteController;
@@ -99,6 +100,10 @@
 
 		// NEW: Novel Editor Route
 		Route::get('/novels/{novel}/edit', [NovelEditorController::class, 'index'])->name('novels.edit');
+
+		// NEW: Codex Entry Routes
+		Route::get('/novels/codex-entries/{codexEntry}', [CodexEntryController::class, 'show'])->name('codex-entries.show');
+		Route::post('/codex-entries/{codexEntry}/generate-image', [CodexEntryController::class, 'generateImage'])->name('codex-entries.generate-image');
 
 		Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 		Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

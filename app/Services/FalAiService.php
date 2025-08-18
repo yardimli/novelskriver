@@ -34,9 +34,11 @@
 		 * Generates an image using the Fal.ai API.
 		 *
 		 * @param string $prompt The text prompt for the image.
+		 * @param array $options Additional options for the API call (e.g., 'image_size').
 		 * @return string|null The URL of the generated image, or null on failure.
 		 */
-		public function generateImage(string $prompt): ?string
+		// MODIFIED: Method now accepts an $options array for flexibility.
+		public function generateImage(string $prompt, array $options = []): ?string
 		{
 			if (!$this->apiKey) {
 				Log::error('Fal.ai API key is not configured.');
@@ -44,17 +46,19 @@
 			}
 
 			try {
+				$payload = [
+					'prompt' => $prompt,
+					'image_size' => $options['image_size'] ?? 'portrait_16_9', // Default size
+				];
+
 				$response = Http::withToken($this->apiKey, 'Key')
 					->withHeaders(['Content-Type' => 'application/json'])
 					->timeout(180) // 3-minute timeout for image generation
-					->post($this->apiBaseUrl . '/fal-ai/qwen-image', [
-						'prompt' => $prompt,
-						'image_size' => 'portrait_16_9',
-					]);
+					->post($this->apiBaseUrl . '/fal-ai/qwen-image', $payload);
 
 				Log::info('Fal.ai API request made.', [
 					'status' => $response->status(),
-					'prompt' => $prompt,
+					'payload' => $payload,
 				]);
 				Log::debug('Fal.ai API response body: ' . $response->body());
 
