@@ -5,8 +5,8 @@
 	use Illuminate\Database\Eloquent\Factories\HasFactory;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
-	use Illuminate\Database\Eloquent\Relations\HasOne; // NEW: Import HasOne relationship.
-	use Illuminate\Support\Facades\Storage; // NEW: Import Storage facade.
+	use Illuminate\Database\Eloquent\Relations\HasOne;
+	use Illuminate\Support\Facades\Storage;
 
 	class CodexEntry extends Model
 	{
@@ -45,7 +45,7 @@
 		}
 
 		/**
-		 * NEW: Get the image associated with the codex entry.
+		 * Get the image associated with the codex entry.
 		 */
 		public function image(): HasOne
 		{
@@ -53,7 +53,7 @@
 		}
 
 		/**
-		 * NEW: Accessor to get the public URL for the entry's image or a placeholder.
+		 * Accessor to get the public URL for the entry's image or a placeholder.
 		 *
 		 * @return string
 		 */
@@ -63,6 +63,21 @@
 				return Storage::disk('public')->url($this->image->image_local_path);
 			}
 
+			return asset('images/codex-placeholder.png');
+		}
+
+		/**
+		 * NEW: Accessor to get the public URL for the entry's thumbnail or a placeholder.
+		 *
+		 * @return string
+		 */
+		public function getThumbnailUrlAttribute(): string
+		{
+			if ($this->image && $this->image->thumbnail_local_path && Storage::disk('public')->exists($this->image->thumbnail_local_path)) {
+				return Storage::disk('public')->url($this->image->thumbnail_local_path);
+			}
+
+			// You can use a different placeholder for thumbnails if you wish
 			return asset('images/codex-placeholder.png');
 		}
 	}

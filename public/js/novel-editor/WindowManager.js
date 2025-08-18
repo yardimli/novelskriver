@@ -359,6 +359,19 @@ export default class WindowManager {
 				} catch (e) {
 					content = `<p class="p-4 text-red-500">Error loading content.</p>`;
 				}
+				// NEW: Handle restoring chapter windows.
+			} else if (state.id.startsWith('chapter-')) {
+				const chapterId = state.id.replace('chapter-', '');
+				try {
+					const response = await fetch(`/chapters/${chapterId}`);
+					if (response.ok) {
+						content = await response.text();
+					} else {
+						content = `<p class="p-4 text-red-500">Error loading chapter content.</p>`;
+					}
+				} catch (e) {
+					content = `<p class="p-4 text-red-500">Error loading chapter content.</p>`;
+				}
 			}
 			
 			if (content) {

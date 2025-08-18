@@ -60,6 +60,62 @@ export function setupCodexEntryHandler(desktop, windowManager) {
 }
 
 /**
+ * NEW: Sets up the event listener for opening chapter windows.
+ * Uses event delegation on the desktop to handle clicks on dynamically loaded content.
+ * @param {HTMLElement} desktop - The main desktop element to attach the listener to.
+ * @param {WindowManager} windowManager - The window manager instance.
+ */
+export function setupChapterHandler(desktop, windowManager) {
+	const chapterIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>`;
+	
+	desktop.addEventListener('click', async (event) => {
+		const chapterButton = event.target.closest('.js-open-chapter');
+		if (!chapterButton) return;
+		
+		const chapterId = chapterButton.dataset.chapterId;
+		const chapterTitle = chapterButton.dataset.chapterTitle;
+		const windowId = `chapter-${chapterId}`;
+		
+		if (windowManager.windows.has(windowId)) {
+			const win = windowManager.windows.get(windowId);
+			if (win.isMinimized) {
+				windowManager.restore(windowId);
+			} else {
+				windowManager.focus(windowId);
+			}
+			return;
+		}
+		
+		try {
+			const response = await fetch(`/chapters/${chapterId}`);
+			if (!response.ok) {
+				throw new Error('Failed to load chapter details.');
+			}
+			const content = await response.text();
+			
+			const openWindows = document.querySelectorAll('[id^="chapter-"]').length;
+			const offsetX = 100 + (openWindows * 30);
+			const offsetY = 300 + (openWindows * 30);
+			
+			windowManager.createWindow({
+				id: windowId,
+				title: chapterTitle,
+				content: content,
+				x: offsetX,
+				y: offsetY,
+				width: 700,
+				height: 500,
+				icon: chapterIcon,
+				closable: true
+			});
+		} catch (error) {
+			console.error('Error opening chapter window:', error);
+			alert(error.message);
+		}
+	});
+}
+
+/**
  * Sets up the theme toggling functionality.
  */
 export function setupThemeToggle() {

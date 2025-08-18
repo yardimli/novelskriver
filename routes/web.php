@@ -7,6 +7,7 @@
 	use App\Http\Controllers\Auth\SocialLoginController;
 	use App\Http\Controllers\BlogController;
 	use App\Http\Controllers\ChangelogController;
+	use App\Http\Controllers\ChapterController; // NEW: Import ChapterController.
 	use App\Http\Controllers\CodexEntryController;
 	use App\Http\Controllers\CoverController;
 	use App\Http\Controllers\DesignerController;
@@ -101,10 +102,12 @@
 		// Novel Editor Route
 		Route::get('/novels/{novel}/edit', [NovelEditorController::class, 'index'])->name('novels.edit');
 
+		// NEW: Chapter Route for editor window content.
+		Route::get('/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
+
 		// Codex Entry Routes
 		Route::get('/novels/codex-entries/{codexEntry}', [CodexEntryController::class, 'show'])->name('codex-entries.show');
 		Route::post('/codex-entries/{codexEntry}/generate-image', [CodexEntryController::class, 'generateImage'])->name('codex-entries.generate-image');
-		// NEW: Route for manual image uploads.
 		Route::post('/codex-entries/{codexEntry}/upload-image', [CodexEntryController::class, 'uploadImage'])->name('codex-entries.upload-image');
 
 		Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

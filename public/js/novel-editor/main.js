@@ -1,5 +1,6 @@
 import WindowManager from './WindowManager.js';
-import { setupCodexEntryHandler, setupThemeToggle, setupOpenWindowsMenu } from './eventHandlers.js';
+// MODIFIED: Import the new chapter handler.
+import { setupCodexEntryHandler, setupChapterHandler, setupThemeToggle, setupOpenWindowsMenu } from './eventHandlers.js';
 
 /**
  * Initializes the novel editor's multi-window desktop environment.
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	
 	// Initialize event handlers for various UI interactions.
 	setupCodexEntryHandler(desktop, windowManager);
+	setupChapterHandler(desktop, windowManager); // NEW: Call the chapter handler.
 	setupThemeToggle();
 	setupOpenWindowsMenu(windowManager);
 });
