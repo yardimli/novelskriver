@@ -3,12 +3,16 @@ import forms from '@tailwindcss/forms';
 
 /** @type {import('tailwindcss').Config} */
 export default {
+    // NEW: Add darkMode strategy to work with Bootstrap's theme switcher.
+    darkMode: ['attr', 'data-bs-theme'],
+    
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
+        './public/js/novel-editor.js', // MODIFIED: Add JS file to content scanning for Tailwind classes.
     ],
-
+    
     theme: {
         extend: {
             fontFamily: {
@@ -16,6 +20,6 @@ export default {
             },
         },
     },
-
+    
     plugins: [forms],
 };

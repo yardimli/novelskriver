@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the novel editor UI */
+.resize-handle {
+    @apply absolute bottom-0 right-0 w-4 h-4 cursor-se-resize;
+    /* A visual indicator can be added via a background image or pseudo-element if desired */
+}
+
+.resize-handle::after {
+    content: '';
+    @apply absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2 border-gray-400;
+}
+
+[data-bs-theme="dark"] .resize-handle::after {
+    @apply border-gray-500;
+}
+
+
+.window-minimized {
+    @apply w-64 h-10 shadow-lg cursor-pointer;
+}
+
+/* NEW: Helper class to disable transitions during drag/resize operations for a smooth experience. */
+.dragging {
+    @apply transition-none !important;
+}

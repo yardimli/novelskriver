@@ -12,6 +12,7 @@
 	use App\Http\Controllers\FavoriteController;
 	use App\Http\Controllers\HomeController;
 	use App\Http\Controllers\NovelController;
+	use App\Http\Controllers\NovelEditorController; // NEW: Import the new controller.
 	use App\Http\Controllers\PageController;
 	use App\Http\Controllers\ProfileController;
 	use App\Http\Controllers\SeriesController;
@@ -93,8 +94,11 @@
 		// Series Creation (for AJAX)
 		Route::post('/series', [SeriesController::class, 'store'])->name('series.store');
 
-		// NEW: Novel Structure Generation
+		// Novel Structure Generation
 		Route::post('/novels/{novel}/generate-structure', [NovelController::class, 'generateStructure'])->name('novels.generate-structure');
+
+		// NEW: Novel Editor Route
+		Route::get('/novels/{novel}/edit', [NovelEditorController::class, 'index'])->name('novels.edit');
 
 		Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 		Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

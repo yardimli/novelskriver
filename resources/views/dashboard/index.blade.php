@@ -98,7 +98,8 @@
 															<i class="bi bi-magic me-2"></i>Fill with AI
 														</button>
 													@else
-														<a href="#" class="btn btn-outline-secondary w-100 disabled" aria-disabled="true" onclick="return false;">
+														{{-- MODIFIED: Changed from a disabled button to an active link pointing to the new editor route. --}}
+														<a href="{{ route('novels.edit', $novel) }}" class="btn btn-outline-secondary w-100">
 															<i class="bi bi-pencil-square me-2"></i>Edit Novel
 														</a>
 													@endif
@@ -138,7 +139,8 @@
 															<i class="bi bi-magic me-2"></i>Fill with AI
 														</button>
 													@else
-														<a href="#" class="btn btn-outline-secondary w-100 disabled" aria-disabled="true" onclick="return false;">
+														{{-- MODIFIED: Changed from a disabled button to an active link pointing to the new editor route. --}}
+														<a href="{{ route('novels.edit', $novel) }}" class="btn btn-outline-secondary w-100">
 															<i class="bi bi-pencil-square me-2"></i>Edit Novel
 														</a>
 													@endif
