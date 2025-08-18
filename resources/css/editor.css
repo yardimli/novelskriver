@@ -27,3 +27,13 @@
 .dragging {
     @apply transition-none !important;
 }
+
+/* NEW: Style for the active window's title bar to differentiate it. */
+.active .window-title-bar {
+    @apply bg-indigo-200 dark:bg-indigo-900/70;
+}
+
+/* NEW: Adjust title text color for better contrast on the active title bar. */
+.active .window-title-bar .font-bold {
+    @apply text-black dark:text-white;
+}

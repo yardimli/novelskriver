@@ -39,10 +39,11 @@ export default class WindowManager {
 		win.style.minHeight = '200px';
 		win.style.left = `${x}px`;
 		win.style.top = `${y}px`;
-		win.style.zIndex = this.highestZIndex++;
+		// MODIFIED: z-index is now exclusively handled by the focus() method to ensure consistency.
 		
 		const titleBar = document.createElement('div');
-		titleBar.className = 'flex items-center justify-between h-10 bg-gray-100 dark:bg-gray-900/70 px-3 cursor-move border-b border-gray-200 dark:border-gray-700 flex-shrink-0';
+		// MODIFIED: Added a 'window-title-bar' class for easier CSS targeting of the active state.
+		titleBar.className = 'window-title-bar flex items-center justify-between h-10 bg-gray-100 dark:bg-gray-900/70 px-3 cursor-move border-b border-gray-200 dark:border-gray-700 flex-shrink-0';
 		
 		const controls = document.createElement('div');
 		controls.className = 'flex items-center gap-2';
@@ -92,14 +93,15 @@ export default class WindowManager {
 			originalRect: { x, y, width, height }
 		};
 		this.windows.set(windowId, windowState);
-		this.activeWindow = windowId;
 		
 		this.makeDraggable(win, titleBar);
 		this.makeResizable(win, resizeHandle);
 		
 		win.addEventListener('mousedown', () => this.focus(windowId), true);
 		
-		this.saveState();
+		// MODIFIED: Call focus to properly set the new window as active and bring it to the front.
+		this.focus(windowId);
+		
 		return windowId;
 	}
 	
@@ -140,9 +142,16 @@ export default class WindowManager {
 	 */
 	focus(windowId) {
 		if (this.activeWindow === windowId) return;
+		
+		// MODIFIED: De-activate the previously active window by removing the 'active' class.
+		if (this.activeWindow && this.windows.has(this.activeWindow)) {
+			this.windows.get(this.activeWindow).element.classList.remove('active');
+		}
+		
 		const win = this.windows.get(windowId);
 		if (win) {
 			win.element.style.zIndex = this.highestZIndex++;
+			win.element.classList.add('active'); // MODIFIED: Activate the new window by adding the 'active' class.
 			this.activeWindow = windowId;
 			this.saveState();
 		}
@@ -581,17 +590,17 @@ export default class WindowManager {
 		
 		const rightColumnsStartX = leftColumnWidth + padding * 2;
 		const rightColumnsTotalWidth = desktopWidth - rightColumnsStartX - padding;
-		const itemHeight = availableHeight * 0.25 - padding;
+		const itemHeight = availableHeight * 0.33 - padding;
 		let currentY = padding;
 		let currentX = rightColumnsStartX;
 		let rowCount = 0;
-		let columnCount = Math.ceil( rightColumnItems.length / 4); // Calculate how many rows we can fit.
+		let columnCount = Math.ceil( rightColumnItems.length / 3); // Calculate how many rows we can fit.
 		let columnWidth = rightColumnsTotalWidth / columnCount;
 		rightColumnItems.forEach(item => {
 			this.reposition(item.id, currentX, currentY, columnWidth, itemHeight);
 			currentY += itemHeight + padding;
 			rowCount++;
-			if (rowCount >= 4) {
+			if (rowCount >= 3) {
 				currentY = padding;
 				currentX += columnWidth + padding;
 				rowCount = 0;
