@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		constructor(desktop, taskbar) {
 			this.desktop = desktop;
 			this.taskbar = taskbar;
+			// NEW: A dedicated container for minimized window icons.
+			this.minimizedContainer = document.getElementById('minimized-windows-container');
 			this.windows = new Map();
 			this.activeWindow = null;
 			this.highestZIndex = 10;
@@ -17,9 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		
 		/**
 		 * Creates a new window on the desktop.
-		 * MODIFIED: Added 'icon' parameter to accept an SVG string.
+		 * MODIFIED: Added 'icon' and 'closable' parameters.
 		 */
-		createWindow({ id, title, content, x, y, width, height, icon }) {
+		createWindow({ id, title, content, x, y, width, height, icon, closable = true }) {
 			this.windowCounter++;
 			const windowId = id || `window-${this.windowCounter}`;
 			
@@ -46,12 +48,17 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			const controls = document.createElement('div');
 			controls.className = 'flex items-center gap-2';
-			const closeBtn = this.createControlButton('bg-red-500', () => this.close(windowId), 'close');
-			const minimizeBtn = this.createControlButton('bg-yellow-500', () => this.minimize(windowId), 'minimize');
-			const maximizeBtn = this.createControlButton('bg-green-500', () => this.maximize(windowId), 'maximize');
-			controls.append(closeBtn, minimizeBtn, maximizeBtn);
 			
-			// NEW: Wrapper for icon and title to keep them together.
+			// NEW: Conditionally create the close button.
+			const controlButtons = [];
+			if (closable) {
+				controlButtons.push(this.createControlButton('bg-red-500', () => this.close(windowId), 'close'));
+			}
+			controlButtons.push(this.createControlButton('bg-yellow-500', () => this.minimize(windowId), 'minimize'));
+			controlButtons.push(this.createControlButton('bg-green-500', () => this.maximize(windowId), 'maximize'));
+			controls.append(...controlButtons);
+			
+			// Wrapper for icon and title to keep them together.
 			const titleWrapper = document.createElement('div');
 			titleWrapper.className = 'flex items-center overflow-hidden';
 			
@@ -65,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			titleWrapper.append(iconEl, titleText);
 			
-			// NEW: Spacer to balance the controls on the left, ensuring the title is centered.
+			// Spacer to balance the controls on the left, ensuring the title is centered.
 			const rightSpacer = document.createElement('div');
 			rightSpacer.style.width = '64px'; // Approx width of controls.
 			
@@ -86,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const windowState = {
 				element: win,
 				title,
-				icon, // NEW: Store icon in window state.
+				icon,
 				isMinimized: false,
 				isMaximized: false,
 				originalRect: { x, y, width, height },
@@ -158,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (win) {
 				win.element.remove();
 				this.windows.delete(windowId);
-				const taskbarItem = this.taskbar.querySelector(`[data-window-id="${windowId}"]`);
+				const taskbarItem = this.minimizedContainer.querySelector(`[data-window-id="${windowId}"]`);
 				if (taskbarItem) taskbarItem.remove();
 			}
 		}
@@ -174,13 +181,12 @@ document.addEventListener('DOMContentLoaded', () => {
 			win.element.classList.add('hidden');
 			
 			const taskbarItem = document.createElement('button');
-			// MODIFIED: Added flex layout for icon and title.
 			taskbarItem.className = 'window-minimized bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded px-3 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 transition-colors flex items-center gap-2';
-			// MODIFIED: Added icon to the taskbar item.
 			taskbarItem.innerHTML = `<div class="w-5 h-5 flex-shrink-0">${win.icon || ''}</div><span class="truncate">${win.title}</span>`;
 			taskbarItem.dataset.windowId = windowId;
 			taskbarItem.addEventListener('click', () => this.restore(windowId));
-			this.taskbar.appendChild(taskbarItem);
+			// MODIFIED: Append to the dedicated container instead of the whole taskbar.
+			this.minimizedContainer.appendChild(taskbarItem);
 		}
 		
 		/**
@@ -194,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			win.element.classList.remove('hidden');
 			this.focus(windowId);
 			
-			const taskbarItem = this.taskbar.querySelector(`[data-window-id="${windowId}"]`);
+			const taskbarItem = this.minimizedContainer.querySelector(`[data-window-id="${windowId}"]`);
 			if (taskbarItem) taskbarItem.remove();
 		}
 		
@@ -237,7 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			};
 			
 			const onMouseUp = () => {
-				// Remove the 'dragging' class to re-enable transitions.
 				win.classList.remove('dragging');
 				document.removeEventListener('mousemove', onMouseMove);
 				document.removeEventListener('mouseup', onMouseUp);
@@ -247,7 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				const winState = this.windows.get(win.id);
 				if (winState && winState.isMaximized) return;
 				
-				// Add a 'dragging' class to disable transitions during drag.
 				win.classList.add('dragging');
 				
 				offsetX = e.clientX - win.offsetLeft;
@@ -271,7 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			};
 			
 			const onMouseUp = () => {
-				// Remove the 'dragging' class to re-enable transitions.
 				win.classList.remove('dragging');
 				document.removeEventListener('mousemove', onMouseMove);
 				document.removeEventListener('mouseup', onMouseUp);
@@ -279,8 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			
 			handle.addEventListener('mousedown', (e) => {
 				e.preventDefault();
-				
-				// Add a 'dragging' class to disable transitions during resize.
 				win.classList.add('dragging');
 				
 				startX = e.clientX;
@@ -297,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const taskbar = document.getElementById('taskbar');
 	const windowManager = new WindowManager(desktop, taskbar);
 	
-	// NEW: Icons for the windows (Heroicons - Outline).
+	// Icons for the windows (Heroicons - Outline).
 	const outlineIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>`;
 	const codexIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>`;
 	
@@ -312,7 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			y: 50,
 			width: 500,
 			height: 600,
-			icon: outlineIcon, // NEW: Pass icon to window.
+			icon: outlineIcon,
+			closable: false, // MODIFIED: This window cannot be closed.
 		});
 	}
 	
@@ -326,16 +328,16 @@ document.addEventListener('DOMContentLoaded', () => {
 			y: 80,
 			width: 450,
 			height: 550,
-			icon: codexIcon, // NEW: Pass icon to window.
+			icon: codexIcon,
+			closable: false, // MODIFIED: This window cannot be closed.
 		});
 	}
 	
-	// --- NEW: Theme Toggling Logic ---
+	// --- Theme Toggling Logic ---
 	const themeToggleBtn = document.getElementById('theme-toggle');
 	const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
 	const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
 	
-	// Set initial icon visibility based on the theme class set by the inline script.
 	if (document.documentElement.classList.contains('dark')) {
 		themeToggleLightIcon.classList.remove('hidden');
 	} else {
@@ -343,17 +345,63 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 	
 	themeToggleBtn.addEventListener('click', function() {
-		// Toggle icons inside button.
 		themeToggleDarkIcon.classList.toggle('hidden');
 		themeToggleLightIcon.classList.toggle('hidden');
 		
-		// Toggle theme class and update localStorage.
 		if (document.documentElement.classList.contains('dark')) {
 			document.documentElement.classList.remove('dark');
 			localStorage.setItem('theme', 'light');
 		} else {
 			document.documentElement.classList.add('dark');
 			localStorage.setItem('theme', 'dark');
+		}
+	});
+	
+	// --- NEW: "Open Windows" Menu Logic ---
+	const openWindowsBtn = document.getElementById('open-windows-btn');
+	const openWindowsMenu = document.getElementById('open-windows-menu');
+	const openWindowsList = document.getElementById('open-windows-list');
+	
+	function populateOpenWindowsMenu() {
+		openWindowsList.innerHTML = ''; // Clear existing items.
+		
+		if (windowManager.windows.size === 0) {
+			openWindowsList.innerHTML = `<li class="px-4 py-2 text-sm text-gray-500">No open windows.</li>`;
+			return;
+		}
+		
+		windowManager.windows.forEach((win, windowId) => {
+			const li = document.createElement('li');
+			const button = document.createElement('button');
+			button.className = 'w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3';
+			button.innerHTML = `<div class="w-5 h-5 flex-shrink-0">${win.icon || ''}</div><span class="truncate">${win.title}</span>`;
+			
+			button.addEventListener('click', () => {
+				if (win.isMinimized) {
+					windowManager.restore(windowId);
+				} else {
+					windowManager.focus(windowId);
+				}
+				openWindowsMenu.classList.add('hidden'); // Close menu on selection.
+			});
+			
+			li.appendChild(button);
+			openWindowsList.appendChild(li);
+		});
+	}
+	
+	openWindowsBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		if (openWindowsMenu.classList.contains('hidden')) {
+			populateOpenWindowsMenu();
+		}
+		openWindowsMenu.classList.toggle('hidden');
+	});
+	
+	// Close the menu if clicking outside of it.
+	document.addEventListener('click', (e) => {
+		if (!openWindowsMenu.classList.contains('hidden') && !openWindowsMenu.contains(e.target) && !openWindowsBtn.contains(e.target)) {
+			openWindowsMenu.classList.add('hidden');
 		}
 	});
 });
