@@ -13,7 +13,8 @@
     @apply absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2 border-gray-400;
 }
 
-[data-bs-theme="dark"] .resize-handle::after {
+/* MODIFIED: Changed selector from [data-bs-theme="dark"] to .dark for Tailwind's class strategy. */
+.dark .resize-handle::after {
     @apply border-gray-500;
 }
 
@@ -22,7 +23,7 @@
     @apply w-64 h-10 shadow-lg cursor-pointer;
 }
 
-/* NEW: Helper class to disable transitions during drag/resize operations for a smooth experience. */
+/* Helper class to disable transitions during drag/resize operations for a smooth experience. */
 .dragging {
     @apply transition-none !important;
 }
