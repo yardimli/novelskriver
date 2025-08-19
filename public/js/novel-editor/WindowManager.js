@@ -10,7 +10,7 @@ export default class WindowManager {
 		this.desktop = desktop;
 		this.taskbar = taskbar;
 		this.novelId = novelId;
-		this.viewport = viewport; // NEW: The visible area for the canvas.
+		this.viewport = viewport; // The visible area for the canvas.
 		this.minimizedContainer = document.getElementById('minimized-windows-container');
 		this.windows = new Map();
 		this.activeWindow = null;
@@ -18,7 +18,7 @@ export default class WindowManager {
 		this.windowCounter = 0;
 		this.minimizedOrder = ['outline-window', 'codex-window'];
 		
-		// NEW: Timeout for debouncing save state calls.
+		// Timeout for debouncing save state calls.
 		this.saveStateTimeout = null;
 		
 		// Properties for canvas pan and zoom state.
@@ -55,7 +55,6 @@ export default class WindowManager {
 		const titleBar = document.createElement('div');
 		titleBar.className = 'window-title-bar flex items-center justify-between h-10 bg-gray-100 dark:bg-gray-900/70 px-3 cursor-move border-b border-gray-200 dark:border-gray-700 flex-shrink-0';
 		
-		// MODIFIED: Add double-click listener to toggle maximize/restore.
 		titleBar.addEventListener('dblclick', () => this.maximize(windowId));
 		
 		const controls = document.createElement('div');
@@ -150,7 +149,8 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * NEW: Pans the canvas to ensure the specified window is visible in the viewport.
+	 * MODIFIED: Pans the canvas to ensure the specified window is fully visible in the viewport.
+	 * This version checks all four edges of the window against the viewport boundaries.
 	 * @param {string} windowId The ID of the window to bring into view.
 	 */
 	scrollIntoView(windowId) {
@@ -175,30 +175,34 @@ export default class WindowManager {
 		const viewportWidth = this.viewport.clientWidth;
 		const viewportHeight = this.viewport.clientHeight;
 		
-		let targetPanX = this.panX;
-		let targetPanY = this.panY;
-		let needsPan = false;
+		let deltaX = 0;
+		let deltaY = 0;
 		
-		// Check if window is outside the viewport and calculate necessary pan adjustment
-		if (viewRight < padding) { // Too far left
-			targetPanX = this.panX - (viewRight - padding);
-			needsPan = true;
-		} else if (viewLeft > viewportWidth - padding) { // Too far right
-			targetPanX = this.panX - (viewLeft - (viewportWidth - padding));
-			needsPan = true;
+		// Check horizontal position.
+		// The `else if` is important for windows wider than the viewport, preventing jitter.
+		// It prioritizes aligning the left edge.
+		if (viewLeft < padding) {
+			// Window's left edge is off-screen to the left. Pan right.
+			deltaX = padding - viewLeft;
+		} else if (viewRight > viewportWidth - padding) {
+			// Window's right edge is off-screen to the right. Pan left.
+			deltaX = (viewportWidth - padding) - viewRight;
 		}
 		
-		if (viewBottom < padding) { // Too far up
-			targetPanY = this.panY - (viewBottom - padding);
-			needsPan = true;
-		} else if (viewTop > viewportHeight - padding) { // Too far down
-			targetPanY = this.panY - (viewTop - (viewportHeight - padding));
-			needsPan = true;
+		// Check vertical position.
+		// Prioritizes aligning the top edge for windows taller than the viewport.
+		if (viewTop < padding) {
+			// Window's top edge is off-screen to the top. Pan down.
+			deltaY = padding - viewTop;
+		} else if (viewBottom > viewportHeight - padding) {
+			// Window's bottom edge is off-screen to the bottom. Pan up.
+			deltaY = (viewportHeight - padding) - viewBottom;
 		}
 		
-		if (needsPan) {
-			this.panX = targetPanX;
-			this.panY = targetPanY;
+		// Apply the calculated adjustments if any are needed.
+		if (deltaX !== 0 || deltaY !== 0) {
+			this.panX += deltaX;
+			this.panY += deltaY;
 			this.updateCanvasTransform(true); // Animate the pan
 			this.saveState();
 		}
@@ -208,7 +212,7 @@ export default class WindowManager {
 	 * Brings a window to the front by increasing its z-index.
 	 */
 	focus(windowId) {
-		// MODIFIED: Always check if the window is in view, even if it's already active.
+		// Always check if the window is in view, even if it's already active.
 		if (this.activeWindow === windowId) {
 			this.scrollIntoView(windowId);
 			return;
@@ -224,7 +228,7 @@ export default class WindowManager {
 			win.element.classList.add('active');
 			this.activeWindow = windowId;
 			
-			// NEW: Scroll to the window when it's focused.
+			// Scroll to the window when it's focused.
 			this.scrollIntoView(windowId);
 			
 			this.saveState();
@@ -279,7 +283,7 @@ export default class WindowManager {
 		
 		win.isMinimized = false;
 		win.element.classList.remove('hidden');
-		this.focus(windowId); // MODIFIED: focus() now handles bringing it into view.
+		this.focus(windowId); // focus() now handles bringing it into view.
 		
 		this.updateTaskbar();
 		this.saveState();
@@ -307,7 +311,7 @@ export default class WindowManager {
 				width: win.element.offsetWidth,
 				height: win.element.offsetHeight
 			};
-			// MODIFIED: Maximize now considers the canvas scale.
+			// Maximize now considers the canvas scale.
 			const viewportRect = this.viewport.getBoundingClientRect();
 			win.element.style.width = `${viewportRect.width / this.scale}px`;
 			win.element.style.height = `${(viewportRect.height - this.taskbar.offsetHeight) / this.scale}px`;
@@ -326,7 +330,7 @@ export default class WindowManager {
 		let offsetX; let offsetY;
 		
 		const onMouseMove = (e) => {
-			// MODIFIED: Dragging must account for the canvas scale.
+			// Dragging must account for the canvas scale.
 			win.style.left = `${win.startLeft + (e.clientX - win.startX) / this.scale}px`;
 			win.style.top = `${win.startTop + (e.clientY - win.startY) / this.scale}px`;
 		};
@@ -336,8 +340,7 @@ export default class WindowManager {
 			document.removeEventListener('mousemove', onMouseMove);
 			document.removeEventListener('mouseup', onMouseUp);
 			
-			// MODIFIED: Update the window's stored position before saving state.
-			// This ensures that if the page is reloaded, the window appears in its new position.
+			// Update the window's stored position before saving state.
 			const winState = this.windows.get(win.id);
 			if (winState && !winState.isMaximized) {
 				winState.originalRect.x = win.offsetLeft;
@@ -353,7 +356,7 @@ export default class WindowManager {
 			
 			win.classList.add('dragging');
 			
-			// MODIFIED: Store start positions for scaled movement calculation.
+			// Store start positions for scaled movement calculation.
 			win.startX = e.clientX;
 			win.startY = e.clientY;
 			win.startLeft = win.offsetLeft;
@@ -382,8 +385,7 @@ export default class WindowManager {
 			document.removeEventListener('mousemove', onMouseMove);
 			document.removeEventListener('mouseup', onMouseUp);
 			
-			// MODIFIED: Update the window's stored dimensions before saving state.
-			// This ensures that if the page is reloaded, the window appears with its new size.
+			// Update the window's stored dimensions before saving state.
 			const winState = this.windows.get(win.id);
 			if (winState && !winState.isMaximized) {
 				winState.originalRect.width = win.offsetWidth;
@@ -407,9 +409,8 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * MODIFIED: Saves the state of all windows and the canvas to the database via fetch.
-	 * This is now debounced to prevent excessive API calls. Every time a state change occurs,
-	 * the save timer is reset. The actual save only happens 1 second after the last change.
+	 * Saves the state of all windows and the canvas to the database via fetch.
+	 * This is now debounced to prevent excessive API calls.
 	 */
 	saveState() {
 		// Clear any existing timer to reset the debounce period.
@@ -424,7 +425,7 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * NEW: The actual implementation of the state saving logic.
+	 * The actual implementation of the state saving logic.
 	 * This is called by the debounced saveState method.
 	 */
 	async _performSaveState() {
@@ -482,8 +483,7 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * MODIFIED: Loads window state from the data attribute provided by the server.
-	 * This replaces the previous localStorage implementation.
+	 * Loads window state from the data attribute provided by the server.
 	 */
 	async loadState() {
 		const stateJSON = document.body.dataset.editorState;
@@ -633,7 +633,7 @@ export default class WindowManager {
 		const outlineIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>`;
 		const codexIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>`;
 		
-		// MODIFIED: Place windows near the center of the 5000x5000 canvas.
+		// Place windows near the center of the 5000x5000 canvas.
 		const canvasCenterX = 2500;
 		const canvasCenterY = 2500;
 		
@@ -668,7 +668,7 @@ export default class WindowManager {
 		}
 	}
 	
-	// --- NEW: CANVAS PAN AND ZOOM METHODS ---
+	// --- CANVAS PAN AND ZOOM METHODS ---
 	
 	/**
 	 * Initializes event listeners for canvas interactions.
@@ -696,13 +696,11 @@ export default class WindowManager {
 	 * Handles the mouse wheel event for zooming.
 	 */
 	handleZoom(event) {
-		// MODIFIED: Check if the scroll event is happening inside a window's content area.
-		// If so, allow the default scroll behavior (scrolling the content) and do not zoom the canvas.
+		// Check if the scroll event is happening inside a window's content area.
 		const scrollContainer = event.target.closest('.overflow-auto, .overflow-y-auto');
 		
 		if (scrollContainer) {
 			// This check ensures that we only block zooming if there's actually something to scroll.
-			// This prevents a window with no scrollbar from "eating" the zoom events.
 			const hasVerticalScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight;
 			const hasHorizontalScroll = scrollContainer.scrollWidth > scrollContainer.clientWidth;
 			
@@ -764,7 +762,7 @@ export default class WindowManager {
 		if (this.isPanning) {
 			this.isPanning = false;
 			this.viewport.classList.remove('panning');
-			this.saveState(); // MODIFIED: Replaced saveCanvasState
+			this.saveState();
 		}
 	}
 	
@@ -774,7 +772,7 @@ export default class WindowManager {
 	zoomIn() {
 		this.scale = Math.min(2, this.scale * 1.2);
 		this.updateCanvasTransform(true);
-		this.saveState(); // MODIFIED: Replaced saveCanvasState
+		this.saveState();
 	}
 	
 	/**
@@ -783,7 +781,7 @@ export default class WindowManager {
 	zoomOut() {
 		this.scale = Math.max(0.1, this.scale / 1.2);
 		this.updateCanvasTransform(true);
-		this.saveState(); // MODIFIED: Replaced saveCanvasState
+		this.saveState();
 	}
 	
 	/**
@@ -824,7 +822,7 @@ export default class WindowManager {
 		this.panY = (viewportHeight / 2) - (contentCenterY * this.scale);
 		
 		this.updateCanvasTransform(animated);
-		this.saveState(); // MODIFIED: Replaced saveCanvasState
+		this.saveState();
 	}
 	
 	// --- END: CANVAS METHODS ---
