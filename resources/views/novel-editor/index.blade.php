@@ -160,6 +160,8 @@
 					<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Image (Optional)</label>
 					<div class="mt-1">
 						<input type="file" id="new-codex-image" name="image" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 dark:file:bg-teal-900/50 dark:file:text-teal-300 dark:hover:file:bg-teal-900" accept="image/png, image/jpeg, image/gif, image/webp">
+						{{-- NEW: Informational text about image generation. --}}
+						<p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Image can be uploaded or generated with AI from the desktop later.</p>
 						<p class="js-error-message mt-1 text-xs text-red-500 hidden"></p>
 					</div>
 				</div>

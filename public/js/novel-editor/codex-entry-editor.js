@@ -367,7 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const novelId = document.body.dataset.novelId;
 	
 	// 1. Open Modal
-	desktop.addEventListener('click', (event) => {
+	// MODIFIED: The button is now in the window title bar, so the listener must be on the body or desktop.
+	document.body.addEventListener('click', (event) => {
 		if (event.target.closest('.js-open-new-codex-modal')) {
 			if (newCodexModal) {
 				newCodexModal.classList.remove('hidden');
@@ -378,11 +379,19 @@ document.addEventListener('DOMContentLoaded', () => {
 	// 2. Close Modal
 	if (newCodexModal) {
 		newCodexModal.addEventListener('click', (event) => {
-			if (event.target.closest('.js-close-new-codex-modal') || event.target === newCodexModal) {
+			// MODIFIED: Removed `|| event.target === newCodexModal` to prevent closing on outside click.
+			if (event.target.closest('.js-close-new-codex-modal')) {
 				resetAndCloseNewCodexModal();
 			}
 		});
 	}
+	
+	// NEW: Close modal on Escape key press.
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape' && newCodexModal && !newCodexModal.classList.contains('hidden')) {
+			resetAndCloseNewCodexModal();
+		}
+	});
 	
 	// 3. Handle "Create New Category" dropdown
 	if (newCodexForm) {

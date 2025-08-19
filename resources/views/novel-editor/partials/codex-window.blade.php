@@ -1,14 +1,5 @@
-{{-- MODIFIED: Added a button to open the "New Codex Entry" modal. --}}
+{{-- MODIFIED: The "+ New Entry" button has been moved to the window's title bar via JavaScript. --}}
 <div class="p-4 space-y-4">
-	<div class="px-1 pb-2 border-b border-gray-200 dark:border-gray-700">
-		<button type="button" class="js-open-new-codex-modal w-full text-sm px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white rounded-md transition-colors flex items-center justify-center gap-2">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-				<path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-			</svg>
-			New Entry
-		</button>
-	</div>
-	
 	@forelse($novel->codexCategories as $category)
 		{{-- MODIFIED: Added an ID to the category container for easier targeting by JS. --}}
 		<div id="codex-category-{{ $category->id }}">

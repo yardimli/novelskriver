@@ -83,7 +83,24 @@ export default class WindowManager {
 		titleWrapper.append(iconEl, titleText);
 		
 		const rightSpacer = document.createElement('div');
-		rightSpacer.style.width = '64px';
+		
+		// MODIFIED: Add "+ New Entry" button to the codex window title bar and handle spacer width.
+		if (id === 'codex-window') {
+			rightSpacer.className = 'flex items-center justify-end min-w-[64px]';
+			const newEntryBtn = document.createElement('button');
+			newEntryBtn.type = 'button';
+			newEntryBtn.className = 'js-open-new-codex-modal text-xs px-2 py-1 bg-teal-500 hover:bg-teal-600 text-white rounded-md transition-colors flex items-center gap-1 mr-2';
+			newEntryBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                </svg>
+                New Entry
+            `;
+			rightSpacer.appendChild(newEntryBtn);
+		} else {
+			// If it's not the codex window, keep the original spacer for balance.
+			rightSpacer.style.width = '64px';
+		}
 		
 		titleBar.append(controls, titleWrapper, rightSpacer);
 		
