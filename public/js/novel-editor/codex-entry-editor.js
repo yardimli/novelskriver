@@ -51,38 +51,46 @@ document.addEventListener('DOMContentLoaded', () => {
 	};
 	
 	// --- Event Delegation for Modal Triggers and Closers ---
-	desktop.addEventListener('click', (event) => {
+	// MODIFIED: Use document.body for event delegation for modals, as they are moved outside the #desktop element.
+	document.body.addEventListener('click', (event) => {
 		const target = event.target;
-		// Find the parent window content, if any
-		const windowEl = target.closest('.codex-entry-window-content');
-		if (!windowEl) return;
 		
-		const entryId = windowEl.dataset.entryId;
-		
-		// Open AI Modal
-		if (target.closest('.js-codex-generate-ai')) {
-			const modal = document.getElementById(`ai-modal-${entryId}`);
-			// Pre-fill prompt with a suggestion
-			const textarea = modal.querySelector('textarea');
-			textarea.value = `A detailed portrait of ${windowEl.dataset.entryTitle}, fantasy art.`;
-			openModal(modal);
+		// Handle opening modals (triggers are inside windows on the desktop)
+		const openTrigger = target.closest('.js-codex-generate-ai, .js-codex-upload-image');
+		if (openTrigger) {
+			const windowEl = openTrigger.closest('.codex-entry-window-content');
+			if (!windowEl) return;
+			
+			const entryId = windowEl.dataset.entryId;
+			
+			// Open AI Modal
+			if (openTrigger.matches('.js-codex-generate-ai')) {
+				const modal = document.getElementById(`ai-modal-${entryId}`);
+				// Pre-fill prompt with a suggestion
+				const textarea = modal.querySelector('textarea');
+				textarea.value = `A detailed portrait of ${windowEl.dataset.entryTitle}, fantasy art.`;
+				openModal(modal);
+			}
+			
+			// Open Upload Modal
+			if (openTrigger.matches('.js-codex-upload-image')) {
+				const modal = document.getElementById(`upload-modal-${entryId}`);
+				openModal(modal);
+			}
+			return; // Event handled
 		}
 		
-		// Open Upload Modal
-		if (target.closest('.js-codex-upload-image')) {
-			const modal = document.getElementById(`upload-modal-${entryId}`);
-			openModal(modal);
-		}
-		
-		// Close any modal via its close button
-		if (target.closest('.js-close-modal')) {
-			const modal = target.closest('.js-ai-modal, .js-upload-modal');
+		// Handle closing modals (triggers are inside modals in the body)
+		const closeTrigger = target.closest('.js-close-modal');
+		if (closeTrigger) {
+			const modal = closeTrigger.closest('.js-ai-modal, .js-upload-modal');
 			closeModal(modal);
 		}
 	});
 	
 	// --- AI Generation Form Submission ---
-	desktop.addEventListener('submit', async (event) => {
+	// MODIFIED: Use document.body for event delegation.
+	document.body.addEventListener('submit', async (event) => {
 		if (!event.target.matches('.js-ai-form')) return;
 		event.preventDefault();
 		
@@ -130,7 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	
 	// --- Manual Upload Form Submission ---
-	desktop.addEventListener('submit', async (event) => {
+	// MODIFIED: Use document.body for event delegation.
+	document.body.addEventListener('submit', async (event) => {
 		if (!event.target.matches('.js-upload-form')) return;
 		event.preventDefault();
 		
@@ -175,7 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	
 	// --- File Input Change for Preview in Upload Modal ---
-	desktop.addEventListener('change', (event) => {
+	// MODIFIED: Use document.body for event delegation.
+	document.body.addEventListener('change', (event) => {
 		if (!event.target.matches('input[type="file"][name="image"]')) return;
 		
 		const input = event.target;

@@ -90,6 +90,12 @@ export default class WindowManager {
 		contentArea.className = 'flex-grow overflow-auto p-1';
 		contentArea.innerHTML = content;
 		
+		// NEW: Find modals within the content, move them to the body so they are not affected by canvas transform.
+		const modals = contentArea.querySelectorAll('.js-ai-modal, .js-upload-modal');
+		modals.forEach(modal => {
+			document.body.appendChild(modal);
+		});
+		
 		const resizeHandle = document.createElement('div');
 		resizeHandle.className = 'resize-handle';
 		
@@ -244,6 +250,16 @@ export default class WindowManager {
 			const wasMinimized = win.isMinimized;
 			win.element.remove();
 			this.windows.delete(windowId);
+			
+			// NEW: If this was a codex entry window, remove its associated modals from the body.
+			if (windowId.startsWith('codex-entry-')) {
+				const entryId = windowId.replace('codex-entry-', '');
+				const aiModal = document.getElementById(`ai-modal-${entryId}`);
+				const uploadModal = document.getElementById(`upload-modal-${entryId}`);
+				if (aiModal) aiModal.remove();
+				if (uploadModal) uploadModal.remove();
+			}
+			
 			if (wasMinimized) {
 				this.updateTaskbar();
 			}
