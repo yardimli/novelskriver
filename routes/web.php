@@ -8,7 +8,7 @@
 	use App\Http\Controllers\BlogController;
 	use App\Http\Controllers\ChangelogController;
 	use App\Http\Controllers\ChapterController;
-	use App\Http\Controllers\ChapterCodexController; // NEW: Import ChapterCodexController.
+	use App\Http\Controllers\ChapterCodexController;
 	use App\Http\Controllers\CodexEntryController;
 	use App\Http\Controllers\CoverController;
 	use App\Http\Controllers\DesignerController;
@@ -107,7 +107,7 @@
 		// Chapter Route for editor window content.
 		Route::get('/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
 
-		// NEW: Routes for linking/unlinking codex entries to chapters.
+		// Routes for linking/unlinking codex entries to chapters.
 		Route::post('/chapters/{chapter}/codex-entries/{codexEntry}', [ChapterCodexController::class, 'attach'])->name('chapters.codex.attach');
 		Route::delete('/chapters/{chapter}/codex-entries/{codexEntry}', [ChapterCodexController::class, 'detach'])->name('chapters.codex.detach');
 
@@ -115,6 +115,10 @@
 		Route::get('/novels/codex-entries/{codexEntry}', [CodexEntryController::class, 'show'])->name('codex-entries.show');
 		Route::post('/codex-entries/{codexEntry}/generate-image', [CodexEntryController::class, 'generateImage'])->name('codex-entries.generate-image');
 		Route::post('/codex-entries/{codexEntry}/upload-image', [CodexEntryController::class, 'uploadImage'])->name('codex-entries.upload-image');
+
+		// NEW: Routes for linking/unlinking codex entries to each other.
+		Route::post('/codex-entries/{codexEntry}/link/{linkedCodexEntry}', [CodexEntryController::class, 'attachLink'])->name('codex-entries.link.attach');
+		Route::delete('/codex-entries/{codexEntry}/link/{linkedCodexEntry}', [CodexEntryController::class, 'detachLink'])->name('codex-entries.link.detach');
 
 		Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 		Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

@@ -2,13 +2,19 @@
 {{-- MODIFIED: Added drop zone class and data attribute. Replaced beats with codex entry tags. --}}
 <div class="p-4 flex flex-col h-full chapter-window-content select-text js-chapter-drop-zone transition-colors duration-300" data-chapter-id="{{ $chapter->id }}">
 	<div class="prose prose-sm dark:prose-invert max-w-none flex-shrink-0">
+		{{-- NEW: Display Act and Chapter number for context. --}}
+		@if($chapter->section)
+			<h3 class="text-sm font-semibold uppercase tracking-wider text-indigo-500 dark:text-indigo-400">
+				Act {{ $chapter->section->order }} &ndash; Chapter {{ $chapter->order }}
+			</h3>
+		@endif
 		<h2>{{ $chapter->title }}</h2>
 		@if($chapter->summary)
 			<p class="lead">{{ $chapter->summary }}</p>
 		@endif
 	</div>
 	
-	{{-- NEW: Section to display linked codex entries as tags. --}}
+	{{-- Section to display linked codex entries as tags. --}}
 	<div class="js-codex-tags-wrapper mt-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700 pt-3 @if($chapter->codexEntries->isEmpty()) hidden @endif">
 		<div class="js-codex-tags-container flex flex-wrap gap-2">
 			@foreach($chapter->codexEntries as $entry)

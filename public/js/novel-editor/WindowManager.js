@@ -150,10 +150,69 @@ export default class WindowManager {
 	}
 	
 	/**
+	 * NEW: Pans the canvas to ensure the specified window is visible in the viewport.
+	 * @param {string} windowId The ID of the window to bring into view.
+	 */
+	scrollIntoView(windowId) {
+		const win = this.windows.get(windowId);
+		if (!win || win.isMinimized) return;
+		
+		const el = win.element;
+		const padding = 50; // 50px padding from the viewport edges
+		
+		// Get window's position and size in the desktop's coordinate system
+		const winLeft = el.offsetLeft;
+		const winTop = el.offsetTop;
+		const winWidth = el.offsetWidth;
+		const winHeight = el.offsetHeight;
+		
+		// Calculate the window's bounding box in the viewport's coordinate system
+		const viewLeft = (winLeft * this.scale) + this.panX;
+		const viewTop = (winTop * this.scale) + this.panY;
+		const viewRight = viewLeft + (winWidth * this.scale);
+		const viewBottom = viewTop + (winHeight * this.scale);
+		
+		const viewportWidth = this.viewport.clientWidth;
+		const viewportHeight = this.viewport.clientHeight;
+		
+		let targetPanX = this.panX;
+		let targetPanY = this.panY;
+		let needsPan = false;
+		
+		// Check if window is outside the viewport and calculate necessary pan adjustment
+		if (viewRight < padding) { // Too far left
+			targetPanX = this.panX - (viewRight - padding);
+			needsPan = true;
+		} else if (viewLeft > viewportWidth - padding) { // Too far right
+			targetPanX = this.panX - (viewLeft - (viewportWidth - padding));
+			needsPan = true;
+		}
+		
+		if (viewBottom < padding) { // Too far up
+			targetPanY = this.panY - (viewBottom - padding);
+			needsPan = true;
+		} else if (viewTop > viewportHeight - padding) { // Too far down
+			targetPanY = this.panY - (viewTop - (viewportHeight - padding));
+			needsPan = true;
+		}
+		
+		if (needsPan) {
+			this.panX = targetPanX;
+			this.panY = targetPanY;
+			this.updateCanvasTransform(true); // Animate the pan
+			this.saveState();
+		}
+	}
+	
+	/**
 	 * Brings a window to the front by increasing its z-index.
 	 */
 	focus(windowId) {
-		if (this.activeWindow === windowId) return;
+		// MODIFIED: Always check if the window is in view, even if it's already active.
+		if (this.activeWindow === windowId) {
+			this.scrollIntoView(windowId);
+			return;
+		}
 		
 		if (this.activeWindow && this.windows.has(this.activeWindow)) {
 			this.windows.get(this.activeWindow).element.classList.remove('active');
@@ -164,6 +223,10 @@ export default class WindowManager {
 			win.element.style.zIndex = this.highestZIndex++;
 			win.element.classList.add('active');
 			this.activeWindow = windowId;
+			
+			// NEW: Scroll to the window when it's focused.
+			this.scrollIntoView(windowId);
+			
 			this.saveState();
 		}
 	}
@@ -216,7 +279,7 @@ export default class WindowManager {
 		
 		win.isMinimized = false;
 		win.element.classList.remove('hidden');
-		this.focus(windowId);
+		this.focus(windowId); // MODIFIED: focus() now handles bringing it into view.
 		
 		this.updateTaskbar();
 		this.saveState();
@@ -346,7 +409,7 @@ export default class WindowManager {
 	/**
 	 * MODIFIED: Saves the state of all windows and the canvas to the database via fetch.
 	 * This is now debounced to prevent excessive API calls. Every time a state change occurs,
-	 * the save timer is reset. The actual save only happens 5 seconds after the last change.
+	 * the save timer is reset. The actual save only happens 1 second after the last change.
 	 */
 	saveState() {
 		// Clear any existing timer to reset the debounce period.
@@ -354,10 +417,10 @@ export default class WindowManager {
 			clearTimeout(this.saveStateTimeout);
 		}
 		
-		// Set a new timer to perform the save after 5 seconds of inactivity.
+		// Set a new timer to perform the save after a short delay.
 		this.saveStateTimeout = setTimeout(() => {
 			this._performSaveState();
-		}, 1000); // 5000 milliseconds = 5 seconds
+		}, 1000);
 	}
 	
 	/**

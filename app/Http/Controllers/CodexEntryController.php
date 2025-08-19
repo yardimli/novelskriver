@@ -34,7 +34,8 @@
 				return response()->json(['message' => 'Unauthorized'], 403);
 			}
 
-			$codexEntry->load('image');
+			// MODIFIED: Eager load the image and any linked entries (and their images).
+			$codexEntry->load('image', 'linkedEntries.image');
 
 			return view('novel-editor.partials.codex-entry-window', compact('codexEntry'));
 		}
@@ -114,7 +115,7 @@
 		}
 
 		/**
-		 * NEW: Upload an image for a codex entry.
+		 * Upload an image for a codex entry.
 		 *
 		 * @param Request $request
 		 * @param CodexEntry $codexEntry
@@ -178,5 +179,61 @@
 				Log::error('Failed to upload codex entry image for entry ID ' . $codexEntry->id . ': ' . $e->getMessage());
 				return response()->json(['message' => 'Failed to upload image: ' . $e->getMessage()], 500);
 			}
+		}
+
+		/**
+		 * NEW: Attach a codex entry to another codex entry.
+		 *
+		 * @param CodexEntry $codexEntry
+		 * @param CodexEntry $linkedCodexEntry
+		 * @return JsonResponse
+		 */
+		public function attachLink(CodexEntry $codexEntry, CodexEntry $linkedCodexEntry): JsonResponse
+		{
+			// Authorization check
+			if (Auth::id() !== $codexEntry->novel->user_id || Auth::id() !== $linkedCodexEntry->novel->user_id) {
+				return response()->json(['message' => 'Unauthorized'], 403);
+			}
+
+			// Prevent linking to self
+			if ($codexEntry->id === $linkedCodexEntry->id) {
+				return response()->json(['message' => 'Cannot link an entry to itself.'], 422);
+			}
+
+			// Use syncWithoutDetaching to add the link without affecting existing ones and prevent duplicates.
+			$codexEntry->linkedEntries()->syncWithoutDetaching($linkedCodexEntry->id);
+
+			// Eager load the image for the response payload.
+			$linkedCodexEntry->load('image');
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Codex entry linked successfully.',
+				'codexEntry' => [
+					'id' => $linkedCodexEntry->id,
+					'title' => $linkedCodexEntry->title,
+					'thumbnail_url' => $linkedCodexEntry->thumbnail_url,
+				]
+			]);
+		}
+
+		/**
+		 * NEW: Detach a codex entry from another codex entry.
+		 *
+		 * @param CodexEntry $codexEntry
+		 * @param CodexEntry $linkedCodexEntry
+		 * @return JsonResponse
+		 */
+		public function detachLink(CodexEntry $codexEntry, CodexEntry $linkedCodexEntry): JsonResponse
+		{
+			// Authorization check
+			if (Auth::id() !== $codexEntry->novel->user_id || Auth::id() !== $linkedCodexEntry->novel->user_id) {
+				return response()->json(['message' => 'Unauthorized'], 403);
+			}
+
+			// Detach the specific link.
+			$codexEntry->linkedEntries()->detach($linkedCodexEntry->id);
+
+			return response()->json(['success' => true, 'message' => 'Codex entry unlinked.']);
 		}
 	}

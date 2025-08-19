@@ -1,6 +1,6 @@
 {{-- This file contains the content for a single codex entry window. --}}
-{{-- MODIFIED: Added `select-text` to re-enable text selection within this window's content area. --}}
-<div class="p-4 flex flex-col h-full codex-entry-window-content select-text" data-entry-id="{{ $codexEntry->id }}" data-entry-title="{{ $codexEntry->title }}">
+{{-- MODIFIED: Added drop zone class and section for linked entries. --}}
+<div class="p-4 flex flex-col h-full codex-entry-window-content select-text js-codex-drop-zone transition-colors duration-300" data-entry-id="{{ $codexEntry->id }}" data-entry-title="{{ $codexEntry->title }}">
 	<div class="flex-grow flex gap-4 overflow-hidden">
 		{{-- Image Section --}}
 		<div class="w-1/3 flex-shrink-0">
@@ -14,7 +14,6 @@
 		</div>
 		
 		{{-- Details Section --}}
-		{{-- This section is now a flex column to separate the static title/description from the scrollable content. min-w-0 is crucial for flexbox behavior. --}}
 		<div class="w-2/3 flex flex-col min-w-0">
 			{{-- Title and description are now in a non-scrolling, shrinking header area. --}}
 			<div class="flex-shrink-0 prose prose-sm dark:prose-invert max-w-none">
@@ -32,6 +31,35 @@
 					<p class="text-gray-500 italic">No detailed content available.</p>
 				@endif
 			</div>
+		</div>
+	</div>
+	
+	{{-- NEW: Section to display linked codex entries as tags. --}}
+	<div class="js-codex-tags-wrapper mt-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700 pt-3 @if($codexEntry->linkedEntries->isEmpty()) hidden @endif">
+		<h4 class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Linked Entries</h4>
+		<div class="js-codex-tags-container flex flex-wrap gap-2">
+			@foreach($codexEntry->linkedEntries as $entry)
+				<div class="js-codex-tag group/tag relative inline-flex items-center gap-2 bg-gray-200 dark:bg-gray-700 rounded-full pr-2" data-entry-id="{{ $entry->id }}">
+					{{-- This button opens the codex entry window --}}
+					<button type="button"
+					        class="js-open-codex-entry flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+					        data-entry-id="{{ $entry->id }}"
+					        data-entry-title="{{ $entry->title }}">
+						<img src="{{ $entry->thumbnail_url }}" alt="Thumbnail for {{ $entry->title }}" class="w-5 h-5 object-cover rounded-full flex-shrink-0">
+						<span class="js-codex-tag-title text-xs font-medium">{{ $entry->title }}</span>
+					</button>
+					{{-- This button removes the link, appearing on hover --}}
+					<button type="button"
+					        class="js-remove-codex-codex-link absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/tag:opacity-100 transition-opacity"
+					        data-parent-entry-id="{{ $codexEntry->id }}"
+					        data-entry-id="{{ $entry->id }}"
+					        title="Unlink this entry">
+						<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+						</svg>
+					</button>
+				</div>
+			@endforeach
 		</div>
 	</div>
 	

@@ -5,7 +5,7 @@
 	use Illuminate\Database\Eloquent\Factories\HasFactory;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
-	use Illuminate\Database\Eloquent\Relations\BelongsToMany; // NEW: Import BelongsToMany.
+	use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 	use Illuminate\Database\Eloquent\Relations\HasOne;
 	use Illuminate\Support\Facades\Storage;
 
@@ -54,11 +54,28 @@
 		}
 
 		/**
-		 * NEW: Get the chapters that this codex entry is linked to.
+		 * Get the chapters that this codex entry is linked to.
 		 */
 		public function chapters(): BelongsToMany
 		{
 			return $this->belongsToMany(Chapter::class, 'chapter_codex_entry');
+		}
+
+		/**
+		 * NEW: Get the codex entries that this entry links to.
+		 * This defines a self-referencing many-to-many relationship.
+		 */
+		public function linkedEntries(): BelongsToMany
+		{
+			return $this->belongsToMany(CodexEntry::class, 'codex_entry_links', 'codex_entry_id', 'linked_codex_entry_id');
+		}
+
+		/**
+		 * NEW: Get the codex entries that link to this entry.
+		 */
+		public function linkedByEntries(): BelongsToMany
+		{
+			return $this->belongsToMany(CodexEntry::class, 'codex_entry_links', 'linked_codex_entry_id', 'codex_entry_id');
 		}
 
 		/**
