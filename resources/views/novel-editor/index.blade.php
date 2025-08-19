@@ -31,7 +31,7 @@
 	<link rel="stylesheet" href="{{ asset('theme/assets/fonts/css/boxicons.min.css') }}" />
 	
 	<script type="module" src="{{ asset('/js/novel-editor/main.js') }}"></script>
-	<script src="{{ asset('/js/codex-entry-editor.js') }}"></script>
+	<script src="{{ asset('/js/novel-editor/codex-entry-editor.js') }}"></script>
 	
 	@vite(['resources/css/editor.css'])
 
