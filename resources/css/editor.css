@@ -33,6 +33,11 @@
     @apply text-black dark:text-white;
 }
 
+/* NEW: Style for selected windows to give them a visual highlight. */
+.selected {
+    @apply ring-2 ring-blue-500;
+}
+
 /* NEW: Styles for the pannable canvas */
 #desktop {
     /* Provides a subtle grid background for the canvas */

@@ -17,6 +17,7 @@ export default class WindowManager {
 		this.highestZIndex = 10;
 		this.windowCounter = 0;
 		this.minimizedOrder = ['outline-window', 'codex-window'];
+		this.selectedWindows = new Set(); // NEW: To track multiple selected windows.
 		
 		// Timeout for debouncing save state calls.
 		this.saveStateTimeout = null;
@@ -115,7 +116,8 @@ export default class WindowManager {
 		this.makeDraggable(win, titleBar);
 		this.makeResizable(win, resizeHandle);
 		
-		win.addEventListener('mousedown', () => this.focus(windowId), true);
+		// MODIFIED: Pass the event object to focus() to handle shift-clicks for multi-selection.
+		win.addEventListener('mousedown', (e) => this.focus(windowId, e), true);
 		
 		this.focus(windowId);
 		
@@ -215,30 +217,48 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * Brings a window to the front by increasing its z-index.
+	 * MODIFIED: Brings a window to the front and handles multi-selection logic.
+	 * @param {string} windowId The ID of the window being interacted with.
+	 * @param {MouseEvent|null} event The mousedown event, used to check for the Shift key.
 	 */
-	focus(windowId) {
-		// Always check if the window is in view, even if it's already active.
-		if (this.activeWindow === windowId) {
-			this.scrollIntoView(windowId);
-			return;
-		}
+	focus(windowId, event = null) {
+		const win = this.windows.get(windowId);
+		if (!win) return;
 		
+		const isShiftPressed = event && event.shiftKey;
+		
+		// Always bring the clicked window to the front and make it active.
 		if (this.activeWindow && this.windows.has(this.activeWindow)) {
 			this.windows.get(this.activeWindow).element.classList.remove('active');
 		}
+		win.element.style.zIndex = this.highestZIndex++;
+		win.element.classList.add('active');
+		this.activeWindow = windowId;
 		
-		const win = this.windows.get(windowId);
-		if (win) {
-			win.element.style.zIndex = this.highestZIndex++;
-			win.element.classList.add('active');
-			this.activeWindow = windowId;
-			
-			// Scroll to the window when it's focused.
-			this.scrollIntoView(windowId);
-			
-			this.saveState();
+		if (isShiftPressed) {
+			// Toggle selection with the Shift key.
+			if (this.selectedWindows.has(windowId)) {
+				this.selectedWindows.delete(windowId);
+				win.element.classList.remove('selected');
+			} else {
+				this.selectedWindows.add(windowId);
+				win.element.classList.add('selected');
+			}
+		} else {
+			// Standard click.
+			// If clicking on a window that is NOT part of the current selection,
+			// clear the old selection and select only this one.
+			if (!this.selectedWindows.has(windowId)) {
+				this._clearSelection();
+				this.selectedWindows.add(windowId);
+				win.element.classList.add('selected');
+			}
+			// If clicking on a window that IS part of a multi-selection, we don't clear it.
+			// This allows the user to click-and-drag the group.
 		}
+		
+		this.scrollIntoView(windowId);
+		this.saveState();
 	}
 	
 	/**
@@ -250,6 +270,7 @@ export default class WindowManager {
 			const wasMinimized = win.isMinimized;
 			win.element.remove();
 			this.windows.delete(windowId);
+			this.selectedWindows.delete(windowId); // NEW: Remove from selection on close.
 			
 			// NEW: If this was a codex entry window, remove its associated modals from the body.
 			if (windowId.startsWith('codex-entry-')) {
@@ -285,6 +306,10 @@ export default class WindowManager {
 		
 		win.isMinimized = true;
 		win.element.classList.add('hidden');
+		
+		// NEW: Deselect the window when it's minimized.
+		win.element.classList.remove('selected');
+		this.selectedWindows.delete(windowId);
 		
 		this.updateTaskbar();
 		this.saveState();
@@ -361,27 +386,30 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * Adds drag functionality to a window.
+	 * MODIFIED: Adds drag functionality to a window, now supporting group dragging.
 	 */
 	makeDraggable(win, handle) {
-		let offsetX; let offsetY;
-		
 		const onMouseMove = (e) => {
-			// MODIFIED: Add boundary checks to keep window within the desktop.
-			let newLeft = win.startLeft + (e.clientX - win.startX) / this.scale;
-			let newTop = win.startTop + (e.clientY - win.startY) / this.scale;
-			
-			const desktopWidth = this.desktop.offsetWidth;
-			const desktopHeight = this.desktop.offsetHeight;
-			const winWidth = win.offsetWidth;
-			const winHeight = win.offsetHeight;
-			
-			// Clamp the position within the desktop boundaries.
-			newLeft = Math.max(0, Math.min(newLeft, desktopWidth - winWidth));
-			newTop = Math.max(0, Math.min(newTop, desktopHeight - winHeight));
-			
-			win.style.left = `${newLeft}px`;
-			win.style.top = `${newTop}px`;
+			// Iterate over all selected windows and move them in unison.
+			this.selectedWindows.forEach(id => {
+				const currentWinEl = this.windows.get(id).element;
+				
+				// Calculate new position based on this specific window's starting point.
+				let newLeft = currentWinEl.startLeft + (e.clientX - currentWinEl.startX) / this.scale;
+				let newTop = currentWinEl.startTop + (e.clientY - currentWinEl.startY) / this.scale;
+				
+				const desktopWidth = this.desktop.offsetWidth;
+				const desktopHeight = this.desktop.offsetHeight;
+				const winWidth = currentWinEl.offsetWidth;
+				const winHeight = currentWinEl.offsetHeight;
+				
+				// Clamp the position for each window within the desktop boundaries.
+				newLeft = Math.max(0, Math.min(newLeft, desktopWidth - winWidth));
+				newTop = Math.max(0, Math.min(newTop, desktopHeight - winHeight));
+				
+				currentWinEl.style.left = `${newLeft}px`;
+				currentWinEl.style.top = `${newTop}px`;
+			});
 		};
 		
 		const onMouseUp = () => {
@@ -389,12 +417,14 @@ export default class WindowManager {
 			document.removeEventListener('mousemove', onMouseMove);
 			document.removeEventListener('mouseup', onMouseUp);
 			
-			// Update the window's stored position before saving state.
-			const winState = this.windows.get(win.id);
-			if (winState && !winState.isMaximized) {
-				winState.originalRect.x = win.offsetLeft;
-				winState.originalRect.y = win.offsetTop;
-			}
+			// Update the stored position for all moved windows.
+			this.selectedWindows.forEach(id => {
+				const winState = this.windows.get(id);
+				if (winState && !winState.isMaximized) {
+					winState.originalRect.x = winState.element.offsetLeft;
+					winState.originalRect.y = winState.element.offsetTop;
+				}
+			});
 			
 			this.saveState();
 		};
@@ -403,13 +433,19 @@ export default class WindowManager {
 			const winState = this.windows.get(win.id);
 			if (winState && winState.isMaximized) return;
 			
+			// The focus() event, which fires on mousedown, handles the selection logic.
+			// This ensures the clicked window is part of the selection before dragging starts.
+			
 			win.classList.add('dragging');
 			
-			// Store start positions for scaled movement calculation.
-			win.startX = e.clientX;
-			win.startY = e.clientY;
-			win.startLeft = win.offsetLeft;
-			win.startTop = win.offsetTop;
+			// Store start positions for all selected windows relative to the initial mouse click.
+			this.selectedWindows.forEach(id => {
+				const currentWinEl = this.windows.get(id).element;
+				currentWinEl.startX = e.clientX;
+				currentWinEl.startY = e.clientY;
+				currentWinEl.startLeft = currentWinEl.offsetLeft;
+				currentWinEl.startTop = currentWinEl.offsetTop;
+			});
 			
 			document.addEventListener('mousemove', onMouseMove);
 			document.addEventListener('mouseup', onMouseUp);
@@ -803,6 +839,7 @@ export default class WindowManager {
 	handlePanStart(event) {
 		// Only pan when clicking directly on the desktop, not on a window or its contents.
 		if (event.target === this.desktop) {
+			this._clearSelection(); // NEW: Deselect all windows when clicking the desktop.
 			this.isPanning = true;
 			this.panStartX = event.clientX - this.panX;
 			this.panStartY = event.clientY - this.panY;
@@ -892,6 +929,19 @@ export default class WindowManager {
 	}
 	
 	// --- END: CANVAS METHODS ---
+	
+	/**
+	 * NEW: Helper method to deselect all windows.
+	 */
+	_clearSelection() {
+		this.selectedWindows.forEach(id => {
+			const win = this.windows.get(id);
+			if (win) {
+				win.element.classList.remove('selected');
+			}
+		});
+		this.selectedWindows.clear();
+	}
 	
 	/**
 	 * Helper to reposition and resize a window, updating its state.
