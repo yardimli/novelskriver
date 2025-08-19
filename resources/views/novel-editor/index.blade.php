@@ -36,15 +36,15 @@
 	@vite(['resources/css/editor.css'])
 
 </head>
-{{-- MODIFIED: Added data-editor-state attribute to pass initial state to JavaScript. --}}
-<body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden"
+{{-- MODIFIED: Added `select-none` to the body to disable text selection globally within the editor. --}}
+<body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden select-none"
       data-novel-id="{{ $novel->id }}"
       data-editor-state="{{ json_encode($novel->editor_state) }}">
 
-{{-- MODIFIED: The main container is now a "viewport" which clips the oversized desktop.
+{{-- The main container is now a "viewport" which clips the oversized desktop.
      It has overflow-hidden to act as the camera frame for the canvas. --}}
 <div id="viewport" class="relative w-full h-full z-10 overflow-hidden">
-	{{-- MODIFIED: The "desktop" is now a huge, absolutely positioned canvas inside the viewport.
+	{{-- The "desktop" is now a huge, absolutely positioned canvas inside the viewport.
 	     Its position and scale will be manipulated by JavaScript for panning and zooming. --}}
 	<div id="desktop" class="absolute" style="width: 5000px; height: 5000px; transform-origin: 0 0;">
 		{{-- Windows will be dynamically inserted here by JavaScript --}}
@@ -69,7 +69,7 @@
 		{{-- Minimized windows will be dynamically inserted here --}}
 	</div>
 	
-	{{-- NEW: Zoom controls group --}}
+	{{-- Zoom controls group --}}
 	<div class="ml-auto flex items-center gap-1">
 		<button id="zoom-out-btn" type="button" title="Zoom Out" class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none rounded-lg text-sm p-2.5">
 			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" /></svg>

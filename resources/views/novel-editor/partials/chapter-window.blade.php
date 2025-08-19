@@ -1,5 +1,6 @@
-{{-- NEW: This file contains the content for a single chapter window. --}}
-<div class="p-4 flex flex-col h-full chapter-window-content" data-chapter-id="{{ $chapter->id }}">
+{{-- This file contains the content for a single chapter window. --}}
+{{-- MODIFIED: Added `select-text` to re-enable text selection within this window's content area. --}}
+<div class="p-4 flex flex-col h-full chapter-window-content select-text" data-chapter-id="{{ $chapter->id }}">
 	<div class="prose prose-sm dark:prose-invert max-w-none flex-shrink-0">
 		<h2>{{ $chapter->title }}</h2>
 		@if($chapter->summary)

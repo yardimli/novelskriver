@@ -610,8 +610,23 @@ export default class WindowManager {
 	 * Handles the mouse wheel event for zooming.
 	 */
 	handleZoom(event) {
+		// MODIFIED: Check if the scroll event is happening inside a window's content area.
+		// If so, allow the default scroll behavior (scrolling the content) and do not zoom the canvas.
+		const scrollContainer = event.target.closest('.overflow-auto, .overflow-y-auto');
+		
+		if (scrollContainer) {
+			// This check ensures that we only block zooming if there's actually something to scroll.
+			// This prevents a window with no scrollbar from "eating" the zoom events.
+			const hasVerticalScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight;
+			const hasHorizontalScroll = scrollContainer.scrollWidth > scrollContainer.clientWidth;
+			
+			if (hasVerticalScroll || hasHorizontalScroll) {
+				return; // Let the browser handle scrolling inside the window.
+			}
+		}
+		
 		event.preventDefault();
-		const zoomIntensity = 0.1;
+		const zoomIntensity = 0.01;
 		const delta = event.deltaY > 0 ? -zoomIntensity : zoomIntensity;
 		const newScale = Math.max(0.1, Math.min(2, this.scale + delta * this.scale));
 		
@@ -629,7 +644,7 @@ export default class WindowManager {
 		this.scale = newScale;
 		
 		this.updateCanvasTransform();
-		this.saveState(); // MODIFIED: Replaced saveCanvasState
+		this.saveState();
 	}
 	
 	/**

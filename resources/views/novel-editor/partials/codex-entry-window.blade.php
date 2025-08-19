@@ -1,6 +1,6 @@
 {{-- This file contains the content for a single codex entry window. --}}
-{{-- MODIFIED: Restructured for better scrolling behavior. The main content area is now overflow-hidden, and internal panes scroll independently. --}}
-<div class="p-4 flex flex-col h-full codex-entry-window-content" data-entry-id="{{ $codexEntry->id }}" data-entry-title="{{ $codexEntry->title }}">
+{{-- MODIFIED: Added `select-text` to re-enable text selection within this window's content area. --}}
+<div class="p-4 flex flex-col h-full codex-entry-window-content select-text" data-entry-id="{{ $codexEntry->id }}" data-entry-title="{{ $codexEntry->title }}">
 	<div class="flex-grow flex gap-4 overflow-hidden">
 		{{-- Image Section --}}
 		<div class="w-1/3 flex-shrink-0">
@@ -14,9 +14,9 @@
 		</div>
 		
 		{{-- Details Section --}}
-		{{-- MODIFIED: This section is now a flex column to separate the static title/description from the scrollable content. min-w-0 is crucial for flexbox behavior. --}}
+		{{-- This section is now a flex column to separate the static title/description from the scrollable content. min-w-0 is crucial for flexbox behavior. --}}
 		<div class="w-2/3 flex flex-col min-w-0">
-			{{-- MODIFIED: Title and description are now in a non-scrolling, shrinking header area. --}}
+			{{-- Title and description are now in a non-scrolling, shrinking header area. --}}
 			<div class="flex-shrink-0 prose prose-sm dark:prose-invert max-w-none">
 				<h2>{{ $codexEntry->title }}</h2>
 				@if($codexEntry->description)
@@ -24,7 +24,7 @@
 				@endif
 			</div>
 			
-			{{-- MODIFIED: The main content is in a scrollable container that fills the remaining space. --}}
+			{{-- The main content is in a scrollable container that fills the remaining space. --}}
 			<div class="mt-4 flex-grow overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
 				@if($codexEntry->content)
 					{!! nl2br(e($codexEntry->content)) !!}
