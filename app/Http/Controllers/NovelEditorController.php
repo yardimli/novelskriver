@@ -3,6 +3,7 @@
 	namespace App\Http\Controllers;
 
 	use App\Models\Novel;
+	use Illuminate\Http\JsonResponse; // NEW: Import JsonResponse.
 	use Illuminate\Http\Request;
 	use Illuminate\View\View;
 
@@ -34,5 +35,33 @@
 			]);
 
 			return view('novel-editor.index', compact('novel'));
+		}
+
+		/**
+		 * NEW: Save the editor state (window positions, canvas zoom, etc.) to the database.
+		 *
+		 * @param Request $request
+		 * @param Novel $novel
+		 * @return JsonResponse
+		 */
+		public function saveState(Request $request, Novel $novel): JsonResponse
+		{
+			// Authorization check
+			if ($request->user()->id !== $novel->user_id) {
+				return response()->json(['message' => 'Unauthorized'], 403);
+			}
+
+			// Basic validation to ensure we're receiving an object.
+			// More specific validation could be added for windows and canvas properties.
+			$validated = $request->validate([
+				'state' => 'required|array',
+				'state.windows' => 'sometimes|array',
+				'state.canvas' => 'sometimes|array',
+			]);
+
+			$novel->editor_state = $validated['state'];
+			$novel->save();
+
+			return response()->json(['success' => true, 'message' => 'Editor state saved.']);
 		}
 	}

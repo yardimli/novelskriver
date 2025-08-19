@@ -1,21 +1,30 @@
 /**
  * Manages the creation, state, and interaction of windows in the novel editor desktop environment.
  * This class is responsible for the entire lifecycle of a window, from creation to closing,
- * including state persistence in localStorage.
+ * including state persistence in the database via API calls.
+ * This class now also manages the state of the pannable/zoomable canvas.
  */
 export default class WindowManager {
-	constructor(desktop, taskbar, novelId) {
+	// Constructor now accepts a viewport element for canvas controls.
+	constructor(desktop, taskbar, novelId, viewport) {
 		this.desktop = desktop;
 		this.taskbar = taskbar;
 		this.novelId = novelId;
-		this.storageKey = `novel-editor-windows-${this.novelId}`;
+		this.viewport = viewport; // NEW: The visible area for the canvas.
 		this.minimizedContainer = document.getElementById('minimized-windows-container');
 		this.windows = new Map();
 		this.activeWindow = null;
 		this.highestZIndex = 10;
 		this.windowCounter = 0;
-		// NEW: Define the default sort order for specific minimized windows.
 		this.minimizedOrder = ['outline-window', 'codex-window'];
+		
+		// Properties for canvas pan and zoom state.
+		this.scale = 1;
+		this.panX = 0;
+		this.panY = 0;
+		this.isPanning = false;
+		this.panStartX = 0;
+		this.panStartY = 0;
 	}
 	
 	/**
@@ -39,10 +48,8 @@ export default class WindowManager {
 		win.style.minHeight = '200px';
 		win.style.left = `${x}px`;
 		win.style.top = `${y}px`;
-		// MODIFIED: z-index is now exclusively handled by the focus() method to ensure consistency.
 		
 		const titleBar = document.createElement('div');
-		// MODIFIED: Added a 'window-title-bar' class for easier CSS targeting of the active state.
 		titleBar.className = 'window-title-bar flex items-center justify-between h-10 bg-gray-100 dark:bg-gray-900/70 px-3 cursor-move border-b border-gray-200 dark:border-gray-700 flex-shrink-0';
 		
 		const controls = document.createElement('div');
@@ -99,7 +106,6 @@ export default class WindowManager {
 		
 		win.addEventListener('mousedown', () => this.focus(windowId), true);
 		
-		// MODIFIED: Call focus to properly set the new window as active and bring it to the front.
 		this.focus(windowId);
 		
 		return windowId;
@@ -143,7 +149,6 @@ export default class WindowManager {
 	focus(windowId) {
 		if (this.activeWindow === windowId) return;
 		
-		// MODIFIED: De-activate the previously active window by removing the 'active' class.
 		if (this.activeWindow && this.windows.has(this.activeWindow)) {
 			this.windows.get(this.activeWindow).element.classList.remove('active');
 		}
@@ -151,7 +156,7 @@ export default class WindowManager {
 		const win = this.windows.get(windowId);
 		if (win) {
 			win.element.style.zIndex = this.highestZIndex++;
-			win.element.classList.add('active'); // MODIFIED: Activate the new window by adding the 'active' class.
+			win.element.classList.add('active');
 			this.activeWindow = windowId;
 			this.saveState();
 		}
@@ -163,11 +168,9 @@ export default class WindowManager {
 	close(windowId) {
 		const win = this.windows.get(windowId);
 		if (win) {
-			// NEW: Check if the window was minimized before removing it.
 			const wasMinimized = win.isMinimized;
 			win.element.remove();
 			this.windows.delete(windowId);
-			// MODIFIED: Instead of manually removing the taskbar item, refresh the whole taskbar.
 			if (wasMinimized) {
 				this.updateTaskbar();
 			}
@@ -182,8 +185,6 @@ export default class WindowManager {
 		const win = this.windows.get(windowId);
 		if (!win || win.isMinimized) return;
 		
-		// NEW: If the window isn't maximized, save its current geometry as the original state
-		// so it can be restored correctly.
 		if (!win.isMaximized) {
 			win.originalRect = {
 				x: win.element.offsetLeft,
@@ -196,7 +197,6 @@ export default class WindowManager {
 		win.isMinimized = true;
 		win.element.classList.add('hidden');
 		
-		// MODIFIED: Centralized taskbar management.
 		this.updateTaskbar();
 		this.saveState();
 	}
@@ -212,7 +212,6 @@ export default class WindowManager {
 		win.element.classList.remove('hidden');
 		this.focus(windowId);
 		
-		// MODIFIED: Instead of manually removing one item, refresh the whole taskbar.
 		this.updateTaskbar();
 		this.saveState();
 	}
@@ -239,10 +238,12 @@ export default class WindowManager {
 				width: win.element.offsetWidth,
 				height: win.element.offsetHeight
 			};
-			win.element.style.width = '100%';
-			win.element.style.height = `calc(100% - ${this.taskbar.offsetHeight}px)`;
-			win.element.style.left = '0';
-			win.element.style.top = '0';
+			// MODIFIED: Maximize now considers the canvas scale.
+			const viewportRect = this.viewport.getBoundingClientRect();
+			win.element.style.width = `${viewportRect.width / this.scale}px`;
+			win.element.style.height = `${(viewportRect.height - this.taskbar.offsetHeight) / this.scale}px`;
+			win.element.style.left = `${-this.panX / this.scale}px`;
+			win.element.style.top = `${-this.panY / this.scale}px`;
 			win.isMaximized = true;
 		}
 		this.focus(windowId);
@@ -256,8 +257,9 @@ export default class WindowManager {
 		let offsetX; let offsetY;
 		
 		const onMouseMove = (e) => {
-			win.style.left = `${e.clientX - offsetX}px`;
-			win.style.top = `${e.clientY - offsetY}px`;
+			// MODIFIED: Dragging must account for the canvas scale.
+			win.style.left = `${win.startLeft + (e.clientX - win.startX) / this.scale}px`;
+			win.style.top = `${win.startTop + (e.clientY - win.startY) / this.scale}px`;
 		};
 		
 		const onMouseUp = () => {
@@ -273,8 +275,12 @@ export default class WindowManager {
 			
 			win.classList.add('dragging');
 			
-			offsetX = e.clientX - win.offsetLeft;
-			offsetY = e.clientY - win.offsetTop;
+			// MODIFIED: Store start positions for scaled movement calculation.
+			win.startX = e.clientX;
+			win.startY = e.clientY;
+			win.startLeft = win.offsetLeft;
+			win.startTop = win.offsetTop;
+			
 			document.addEventListener('mousemove', onMouseMove);
 			document.addEventListener('mouseup', onMouseUp);
 		});
@@ -287,8 +293,8 @@ export default class WindowManager {
 		let startX; let startY; let startWidth; let startHeight;
 		
 		const onMouseMove = (e) => {
-			const newWidth = startWidth + e.clientX - startX;
-			const newHeight = startHeight + e.clientY - startY;
+			const newWidth = startWidth + (e.clientX - startX) / this.scale;
+			const newHeight = startHeight + (e.clientY - startY) / this.scale;
 			win.style.width = `${newWidth}px`;
 			win.style.height = `${newHeight}px`;
 		};
@@ -314,13 +320,13 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * Saves the state of all windows to localStorage.
+	 * MODIFIED: Saves the state of all windows and the canvas to the database via fetch.
+	 * This replaces the previous localStorage implementation.
 	 */
-	saveState() {
+	async saveState() {
+		// Collect window states
 		const windowsState = [];
 		this.windows.forEach((win, id) => {
-			// MODIFIED: Always use `originalRect` for position and dimensions to ensure
-			// that minimized or maximized windows save their "restored" state correctly.
 			const state = {
 				id: id,
 				title: win.title,
@@ -335,103 +341,155 @@ export default class WindowManager {
 			};
 			windowsState.push(state);
 		});
-		localStorage.setItem(this.storageKey, JSON.stringify(windowsState));
+		
+		// Collect canvas state
+		const canvasState = {
+			scale: this.scale,
+			panX: this.panX,
+			panY: this.panY
+		};
+		
+		// Combine into a single state object
+		const fullState = {
+			windows: windowsState,
+			canvas: canvasState
+		};
+		
+		try {
+			const response = await fetch(`/novels/${this.novelId}/editor-state`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ state: fullState })
+			});
+			
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.message || 'Failed to save editor state.');
+			}
+			// console.log('Editor state saved successfully.'); // Optional: for debugging
+		} catch (error) {
+			console.error('Error saving editor state:', error);
+			// Optionally, notify the user that saving failed.
+		}
 	}
 	
 	/**
-	 * Loads window states from localStorage.
+	 * MODIFIED: Loads window state from the data attribute provided by the server.
+	 * This replaces the previous localStorage implementation.
 	 */
 	async loadState() {
-		const savedState = localStorage.getItem(this.storageKey);
-		if (!savedState) {
-			this.createDefaultWindows();
-			return;
+		const stateJSON = document.body.dataset.editorState;
+		let savedState = null;
+		
+		if (stateJSON) {
+			try {
+				savedState = JSON.parse(stateJSON);
+			} catch (e) {
+				console.error('Failed to parse editor state from server:', e);
+				savedState = null;
+			}
 		}
 		
-		const windows = JSON.parse(savedState);
-		if (!windows || windows.length === 0) {
-			this.createDefaultWindows();
-			return;
-		}
+		let windowsCreated = false;
 		
-		// Sort by z-index to create them in the correct stacking order.
-		windows.sort((a, b) => a.zIndex - b.zIndex);
-		
-		for (const state of windows) {
-			let content = '';
-			let closable = true;
-			const icon = state.icon;
-			const title = state.title;
+		if (savedState && savedState.windows && savedState.windows.length > 0) {
+			const windows = savedState.windows;
+			windows.sort((a, b) => a.zIndex - b.zIndex);
 			
-			if (state.id === 'outline-window') {
-				const template = document.getElementById('outline-window-template');
-				if (template) content = template.innerHTML;
-				closable = false;
-			} else if (state.id === 'codex-window') {
-				const template = document.getElementById('codex-window-template');
-				if (template) content = template.innerHTML;
-				closable = false;
-			} else if (state.id.startsWith('codex-entry-')) {
-				const entryId = state.id.replace('codex-entry-', '');
-				try {
-					const response = await fetch(`/novels/codex-entries/${entryId}`);
-					if (response.ok) {
-						content = await response.text();
-					} else {
+			for (const state of windows) {
+				// ... (content fetching logic remains the same)
+				let content = '';
+				let closable = true;
+				const icon = state.icon;
+				const title = state.title;
+				
+				if (state.id === 'outline-window') {
+					const template = document.getElementById('outline-window-template');
+					if (template) content = template.innerHTML;
+					closable = false;
+				} else if (state.id === 'codex-window') {
+					const template = document.getElementById('codex-window-template');
+					if (template) content = template.innerHTML;
+					closable = false;
+				} else if (state.id.startsWith('codex-entry-')) {
+					const entryId = state.id.replace('codex-entry-', '');
+					try {
+						const response = await fetch(`/novels/codex-entries/${entryId}`);
+						if (response.ok) {
+							content = await response.text();
+						} else {
+							content = `<p class="p-4 text-red-500">Error loading content.</p>`;
+						}
+					} catch (e) {
 						content = `<p class="p-4 text-red-500">Error loading content.</p>`;
 					}
-				} catch (e) {
-					content = `<p class="p-4 text-red-500">Error loading content.</p>`;
-				}
-			} else if (state.id.startsWith('chapter-')) {
-				const chapterId = state.id.replace('chapter-', '');
-				try {
-					const response = await fetch(`/chapters/${chapterId}`);
-					if (response.ok) {
-						content = await response.text();
-					} else {
+				} else if (state.id.startsWith('chapter-')) {
+					const chapterId = state.id.replace('chapter-', '');
+					try {
+						const response = await fetch(`/chapters/${chapterId}`);
+						if (response.ok) {
+							content = await response.text();
+						} else {
+							content = `<p class="p-4 text-red-500">Error loading chapter content.</p>`;
+						}
+					} catch (e) {
 						content = `<p class="p-4 text-red-500">Error loading chapter content.</p>`;
 					}
-				} catch (e) {
-					content = `<p class="p-4 text-red-500">Error loading chapter content.</p>`;
 				}
-			}
-			
-			if (content) {
-				this.createWindow({
-					id: state.id,
-					title: title,
-					content: content,
-					x: state.x,
-					y: state.y,
-					width: state.width,
-					height: state.height,
-					icon: icon,
-					closable: closable
-				});
 				
-				const win = this.windows.get(state.id);
-				if (win) {
-					win.element.style.zIndex = state.zIndex;
-					// Set originalRect from saved state before potentially maximizing.
-					win.originalRect = { x: state.x, y: state.y, width: state.width, height: state.height };
-					if (state.isMaximized) {
-						this.maximize(state.id);
-					}
-					if (state.isMinimized) {
-						this.minimize(state.id);
+				if (content) {
+					this.createWindow({
+						id: state.id,
+						title: title,
+						content: content,
+						x: state.x,
+						y: state.y,
+						width: state.width,
+						height: state.height,
+						icon: icon,
+						closable: closable
+					});
+					
+					const win = this.windows.get(state.id);
+					if (win) {
+						win.element.style.zIndex = state.zIndex;
+						win.originalRect = { x: state.x, y: state.y, width: state.width, height: state.height };
+						if (state.isMaximized) {
+							this.maximize(state.id);
+						}
+						if (state.isMinimized) {
+							this.minimize(state.id);
+						}
 					}
 				}
 			}
+			const maxZ = Math.max(...windows.map(w => w.zIndex || 0), 10);
+			this.highestZIndex = maxZ + 1;
+			windowsCreated = true;
 		}
-		// After creating all, find the highest z-index to continue from there.
-		const maxZ = Math.max(...windows.map(w => w.zIndex || 0), 10);
-		this.highestZIndex = maxZ + 1;
+		
+		if (!windowsCreated) {
+			this.createDefaultWindows();
+		}
+		
+		// Load canvas state from the same object
+		if (savedState && savedState.canvas) {
+			this.scale = savedState.canvas.scale || 1;
+			this.panX = savedState.canvas.panX || 0;
+			this.panY = savedState.canvas.panY || 0;
+			this.updateCanvasTransform();
+		} else {
+			// If no state exists, fit the default windows into view.
+			this.fitToView(false); // Don't animate on initial load
+		}
 	}
 	
 	/**
-	 * NEW: Redraws the entire taskbar area for minimized windows.
-	 * This ensures correct sorting and responsive widths.
+	 * Redraws the entire taskbar area for minimized windows.
 	 */
 	updateTaskbar() {
 		const minimized = [];
@@ -441,23 +499,21 @@ export default class WindowManager {
 			}
 		});
 		
-		// Sort the windows: predefined items first, then alphabetically.
 		minimized.sort((a, b) => {
 			const order = this.minimizedOrder;
 			const indexA = order.indexOf(a.id);
 			const indexB = order.indexOf(b.id);
 			
-			if (indexA !== -1 && indexB !== -1) return indexA - indexB; // Both are special
-			if (indexA !== -1) return -1; // a is special, b is not
-			if (indexB !== -1) return 1;  // b is special, a is not
-			return a.title.localeCompare(b.title); // Neither is special, sort by title
+			if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+			if (indexA !== -1) return -1;
+			if (indexB !== -1) return 1;
+			return a.title.localeCompare(b.title);
 		});
 		
 		this.minimizedContainer.innerHTML = '';
 		
 		minimized.forEach(item => {
 			const taskbarItem = document.createElement('button');
-			// These flex classes allow the items to grow and shrink to fit the available space.
 			taskbarItem.className = 'window-minimized bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded px-3 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 transition-colors flex items-center gap-2 flex-shrink min-w-[120px] max-w-[256px] flex-grow basis-0';
 			taskbarItem.innerHTML = `<div class="w-5 h-5 flex-shrink-0">${item.icon || ''}</div><span class="truncate">${item.title}</span>`;
 			taskbarItem.dataset.windowId = item.id;
@@ -473,14 +529,18 @@ export default class WindowManager {
 		const outlineIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>`;
 		const codexIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>`;
 		
+		// MODIFIED: Place windows near the center of the 5000x5000 canvas.
+		const canvasCenterX = 2500;
+		const canvasCenterY = 2500;
+		
 		const outlineTemplate = document.getElementById('outline-window-template');
 		if (outlineTemplate) {
 			this.createWindow({
 				id: 'outline-window',
 				title: 'Novel Outline',
 				content: outlineTemplate.innerHTML,
-				x: 50,
-				y: 50,
+				x: canvasCenterX - 520,
+				y: canvasCenterY - 300,
 				width: 500,
 				height: 600,
 				icon: outlineIcon,
@@ -494,8 +554,8 @@ export default class WindowManager {
 				id: 'codex-window',
 				title: 'Codex',
 				content: codexTemplate.innerHTML,
-				x: 600,
-				y: 80,
+				x: canvasCenterX + 20,
+				y: canvasCenterY - 270,
 				width: 450,
 				height: 550,
 				icon: codexIcon,
@@ -504,30 +564,168 @@ export default class WindowManager {
 		}
 	}
 	
+	// --- NEW: CANVAS PAN AND ZOOM METHODS ---
+	
 	/**
-	 * NEW: Helper to reposition and resize a window, updating its state.
-	 * @param {string} windowId The ID of the window to reposition.
-	 * @param {number} x The new X coordinate.
-	 * @param {number} y The new Y coordinate.
-	 * @param {number} width The new width.
-	 * @param {number} height The new height.
+	 * Initializes event listeners for canvas interactions.
+	 */
+	initCanvas() {
+		this.viewport.addEventListener('wheel', this.handleZoom.bind(this), { passive: false });
+		this.viewport.addEventListener('mousedown', this.handlePanStart.bind(this));
+		this.viewport.addEventListener('mousemove', this.handlePanMove.bind(this));
+		this.viewport.addEventListener('mouseup', this.handlePanEnd.bind(this));
+		this.viewport.addEventListener('mouseleave', this.handlePanEnd.bind(this)); // Stop panning if mouse leaves viewport
+	}
+	
+	/**
+	 * Applies the current pan and zoom state to the desktop element.
+	 * @param {boolean} [animated=false] - Whether to animate the transition.
+	 */
+	updateCanvasTransform(animated = false) {
+		this.desktop.style.transition = animated ? 'transform 0.3s ease, top 0.3s ease, left 0.3s ease' : 'none';
+		this.desktop.style.transform = `scale(${this.scale})`;
+		this.desktop.style.left = `${this.panX}px`;
+		this.desktop.style.top = `${this.panY}px`;
+	}
+	
+	/**
+	 * Handles the mouse wheel event for zooming.
+	 */
+	handleZoom(event) {
+		event.preventDefault();
+		const zoomIntensity = 0.1;
+		const delta = event.deltaY > 0 ? -zoomIntensity : zoomIntensity;
+		const newScale = Math.max(0.1, Math.min(2, this.scale + delta * this.scale));
+		
+		const viewportRect = this.viewport.getBoundingClientRect();
+		const mouseX = event.clientX - viewportRect.left;
+		const mouseY = event.clientY - viewportRect.top;
+		
+		// Calculate where the mouse is pointing on the un-scaled canvas
+		const mousePointX = (mouseX - this.panX) / this.scale;
+		const mousePointY = (mouseY - this.panY) / this.scale;
+		
+		// Update pan to keep the mouse point stationary relative to the viewport
+		this.panX = mouseX - mousePointX * newScale;
+		this.panY = mouseY - mousePointY * newScale;
+		this.scale = newScale;
+		
+		this.updateCanvasTransform();
+		this.saveState(); // MODIFIED: Replaced saveCanvasState
+	}
+	
+	/**
+	 * Handles the mousedown event to initiate panning.
+	 */
+	handlePanStart(event) {
+		// Only pan when clicking directly on the desktop, not on a window or its contents.
+		if (event.target === this.desktop) {
+			this.isPanning = true;
+			this.panStartX = event.clientX - this.panX;
+			this.panStartY = event.clientY - this.panY;
+			this.viewport.classList.add('panning');
+		}
+	}
+	
+	/**
+	 * Handles the mousemove event to perform panning.
+	 */
+	handlePanMove(event) {
+		if (this.isPanning) {
+			this.panX = event.clientX - this.panStartX;
+			this.panY = event.clientY - this.panStartY;
+			this.updateCanvasTransform();
+		}
+	}
+	
+	/**
+	 * Handles the mouseup event to end panning.
+	 */
+	handlePanEnd() {
+		if (this.isPanning) {
+			this.isPanning = false;
+			this.viewport.classList.remove('panning');
+			this.saveState(); // MODIFIED: Replaced saveCanvasState
+		}
+	}
+	
+	/**
+	 * Zooms in on the center of the viewport.
+	 */
+	zoomIn() {
+		this.scale = Math.min(2, this.scale * 1.2);
+		this.updateCanvasTransform(true);
+		this.saveState(); // MODIFIED: Replaced saveCanvasState
+	}
+	
+	/**
+	 * Zooms out from the center of the viewport.
+	 */
+	zoomOut() {
+		this.scale = Math.max(0.1, this.scale / 1.2);
+		this.updateCanvasTransform(true);
+		this.saveState(); // MODIFIED: Replaced saveCanvasState
+	}
+	
+	/**
+	 * Adjusts pan and zoom to fit all open windows within the viewport.
+	 * @param {boolean} [animated=true] - Whether to animate the transition.
+	 */
+	fitToView(animated = true) {
+		if (this.windows.size === 0) return;
+		
+		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+		
+		this.windows.forEach(win => {
+			if (win.isMinimized) return;
+			const el = win.element;
+			minX = Math.min(minX, el.offsetLeft);
+			minY = Math.min(minY, el.offsetTop);
+			maxX = Math.max(maxX, el.offsetLeft + el.offsetWidth);
+			maxY = Math.max(maxY, el.offsetTop + el.offsetHeight);
+		});
+		
+		if (!isFinite(minX)) return; // No non-minimized windows found
+		
+		const contentWidth = maxX - minX;
+		const contentHeight = maxY - minY;
+		const padding = 100; // Pixels of padding around the content
+		
+		const viewportWidth = this.viewport.clientWidth;
+		const viewportHeight = this.viewport.clientHeight;
+		
+		const scaleX = viewportWidth / (contentWidth + padding * 2);
+		const scaleY = viewportHeight / (contentHeight + padding * 2);
+		this.scale = Math.min(1, scaleX, scaleY); // Don't zoom in past 100% on fit
+		
+		const contentCenterX = minX + contentWidth / 2;
+		const contentCenterY = minY + contentHeight / 2;
+		
+		this.panX = (viewportWidth / 2) - (contentCenterX * this.scale);
+		this.panY = (viewportHeight / 2) - (contentCenterY * this.scale);
+		
+		this.updateCanvasTransform(animated);
+		this.saveState(); // MODIFIED: Replaced saveCanvasState
+	}
+	
+	// --- END: CANVAS METHODS ---
+	
+	/**
+	 * Helper to reposition and resize a window, updating its state.
 	 */
 	reposition(windowId, x, y, width, height) {
 		const win = this.windows.get(windowId);
 		if (!win) return;
 		
-		// Restore if minimized, as it's being arranged now.
 		if (win.isMinimized) {
 			this.restore(windowId);
 		}
 		
-		// Update element style
 		win.element.style.left = `${x}px`;
 		win.element.style.top = `${y}px`;
 		win.element.style.width = `${width}px`;
 		win.element.style.height = `${height}px`;
 		
-		// Update internal state
 		win.isMaximized = false;
 		win.originalRect = { x, y, width, height };
 		
@@ -535,14 +733,13 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * NEW: Arranges open windows into a predefined layout.
+	 * Arranges open windows into a predefined layout.
 	 */
 	arrangeWindows() {
 		const desktopWidth = this.desktop.clientWidth;
 		const availableHeight = this.desktop.clientHeight - this.taskbar.offsetHeight;
 		const padding = 8;
 		
-		// --- Left Column ---
 		const leftColumnWidth = desktopWidth * 0.3 - padding * 1.5;
 		const outlineWindow = this.windows.get('outline-window');
 		const codexWindow = this.windows.get('codex-window');
@@ -553,14 +750,12 @@ export default class WindowManager {
 		}
 		
 		if (codexWindow) {
-			// Position below outline, or at top if outline is closed.
 			const outlineHeight = (outlineWindow ? availableHeight * 0.6 : 0);
 			const codexY = outlineHeight + padding;
 			const codexHeight = availableHeight - codexY - padding;
 			this.reposition('codex-window', padding, codexY, leftColumnWidth, codexHeight);
 		}
 		
-		// --- Right Column ---
 		const chapters = [];
 		const codexEntries = [];
 		
@@ -573,7 +768,6 @@ export default class WindowManager {
 			}
 		});
 		
-		// Sort chapters and entries by their database ID to maintain order.
 		const sortByIdNumber = (a, b) => {
 			const numA = parseInt(a.id.split('-').pop(), 10);
 			const numB = parseInt(b.id.split('-').pop(), 10);
@@ -594,7 +788,7 @@ export default class WindowManager {
 		let currentY = padding;
 		let currentX = rightColumnsStartX;
 		let rowCount = 0;
-		let columnCount = Math.ceil( rightColumnItems.length / 3); // Calculate how many rows we can fit.
+		let columnCount = Math.ceil( rightColumnItems.length / 3);
 		let columnWidth = rightColumnsTotalWidth / columnCount;
 		rightColumnItems.forEach(item => {
 			this.reposition(item.id, currentX, currentY, columnWidth, itemHeight);

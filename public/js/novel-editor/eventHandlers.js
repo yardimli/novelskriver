@@ -236,3 +236,23 @@ export function setupOpenWindowsMenu(windowManager) {
 		}
 	});
 }
+
+/**
+ * NEW: Sets up the canvas zoom controls.
+ * @param {WindowManager} windowManager - The window manager instance which now handles canvas state.
+ */
+export function setupCanvasControls(windowManager) {
+	const zoomInBtn = document.getElementById('zoom-in-btn');
+	const zoomOutBtn = document.getElementById('zoom-out-btn');
+	const zoomFitBtn = document.getElementById('zoom-fit-btn');
+	
+	if (zoomInBtn) {
+		zoomInBtn.addEventListener('click', () => windowManager.zoomIn());
+	}
+	if (zoomOutBtn) {
+		zoomOutBtn.addEventListener('click', () => windowManager.zoomOut());
+	}
+	if (zoomFitBtn) {
+		zoomFitBtn.addEventListener('click', () => windowManager.fitToView());
+	}
+}

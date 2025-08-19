@@ -99,8 +99,10 @@
 		// Novel Structure Generation
 		Route::post('/novels/{novel}/generate-structure', [NovelController::class, 'generateStructure'])->name('novels.generate-structure');
 
-		// Novel Editor Route
+		// Novel Editor Routes
 		Route::get('/novels/{novel}/edit', [NovelEditorController::class, 'index'])->name('novels.edit');
+		// NEW: Route to save editor state.
+		Route::post('/novels/{novel}/editor-state', [NovelEditorController::class, 'saveState'])->name('novels.editor.save-state');
 
 		// NEW: Chapter Route for editor window content.
 		Route::get('/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');

@@ -26,6 +26,17 @@ class Novel extends Model
 		'status',
 		'series_id',
 		'order_in_series',
+		'editor_state', // MODIFIED: Added editor_state.
+	];
+
+	/**
+	 * The attributes that should be cast.
+	 *
+	 * @var array
+	 */
+	// NEW: Cast editor_state to array.
+	protected $casts = [
+		'editor_state' => 'array',
 	];
 
 	/**
