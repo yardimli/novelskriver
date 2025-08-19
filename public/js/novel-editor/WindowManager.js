@@ -266,6 +266,15 @@ export default class WindowManager {
 			win.classList.remove('dragging');
 			document.removeEventListener('mousemove', onMouseMove);
 			document.removeEventListener('mouseup', onMouseUp);
+			
+			// MODIFIED: Update the window's stored position before saving state.
+			// This ensures that if the page is reloaded, the window appears in its new position.
+			const winState = this.windows.get(win.id);
+			if (winState && !winState.isMaximized) {
+				winState.originalRect.x = win.offsetLeft;
+				winState.originalRect.y = win.offsetTop;
+			}
+			
 			this.saveState();
 		};
 		
@@ -303,6 +312,15 @@ export default class WindowManager {
 			win.classList.remove('dragging');
 			document.removeEventListener('mousemove', onMouseMove);
 			document.removeEventListener('mouseup', onMouseUp);
+			
+			// MODIFIED: Update the window's stored dimensions before saving state.
+			// This ensures that if the page is reloaded, the window appears with its new size.
+			const winState = this.windows.get(win.id);
+			if (winState && !winState.isMaximized) {
+				winState.originalRect.width = win.offsetWidth;
+				winState.originalRect.height = win.offsetHeight;
+			}
+			
 			this.saveState();
 		};
 		
@@ -730,77 +748,5 @@ export default class WindowManager {
 		win.originalRect = { x, y, width, height };
 		
 		this.focus(windowId);
-	}
-	
-	/**
-	 * Arranges open windows into a predefined layout.
-	 */
-	arrangeWindows() {
-		const desktopWidth = this.desktop.clientWidth;
-		const availableHeight = this.desktop.clientHeight - this.taskbar.offsetHeight;
-		const padding = 8;
-		
-		const leftColumnWidth = desktopWidth * 0.3 - padding * 1.5;
-		const outlineWindow = this.windows.get('outline-window');
-		const codexWindow = this.windows.get('codex-window');
-		
-		if (outlineWindow) {
-			const outlineHeight = availableHeight * 0.6 - padding * 1.5;
-			this.reposition('outline-window', padding, padding, leftColumnWidth, outlineHeight);
-		}
-		
-		if (codexWindow) {
-			const outlineHeight = (outlineWindow ? availableHeight * 0.6 : 0);
-			const codexY = outlineHeight + padding;
-			const codexHeight = availableHeight - codexY - padding;
-			this.reposition('codex-window', padding, codexY, leftColumnWidth, codexHeight);
-		}
-		
-		const chapters = [];
-		const codexEntries = [];
-		
-		this.windows.forEach((win, id) => {
-			if (id.startsWith('chapter-')) {
-				chapters.push({ id, ...win });
-			}
-			if (id.startsWith('codex-entry-')) {
-				codexEntries.push({ id, ...win });
-			}
-		});
-		
-		const sortByIdNumber = (a, b) => {
-			const numA = parseInt(a.id.split('-').pop(), 10);
-			const numB = parseInt(b.id.split('-').pop(), 10);
-			return numA - numB;
-		};
-		chapters.sort(sortByIdNumber);
-		codexEntries.sort(sortByIdNumber);
-		
-		const rightColumnItems = [...chapters, ...codexEntries];
-		if (rightColumnItems.length === 0) {
-			this.saveState();
-			return;
-		}
-		
-		const rightColumnsStartX = leftColumnWidth + padding * 2;
-		const rightColumnsTotalWidth = desktopWidth - rightColumnsStartX - padding;
-		const itemHeight = availableHeight * 0.33 - padding;
-		let currentY = padding;
-		let currentX = rightColumnsStartX;
-		let rowCount = 0;
-		let columnCount = Math.ceil( rightColumnItems.length / 3);
-		let columnWidth = rightColumnsTotalWidth / columnCount;
-		rightColumnItems.forEach(item => {
-			this.reposition(item.id, currentX, currentY, columnWidth, itemHeight);
-			currentY += itemHeight + padding;
-			rowCount++;
-			if (rowCount >= 3) {
-				currentY = padding;
-				currentX += columnWidth + padding;
-				rowCount = 0;
-			}
-		});
-		
-		this.saveState();
 	}
 }
