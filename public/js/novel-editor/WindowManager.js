@@ -331,21 +331,22 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * Toggles a window between maximized and its original size.
+	 * MODIFIED: Toggles a window between maximized and its original size.
+	 * When maximizing, it now also sets the canvas zoom to 100% and centers the view on the window.
 	 */
 	maximize(windowId) {
 		const win = this.windows.get(windowId);
 		if (!win) return;
 		
 		if (win.isMaximized) {
-			// Restore
+			// Restore to original state
 			win.element.style.width = `${win.originalRect.width}px`;
 			win.element.style.height = `${win.originalRect.height}px`;
 			win.element.style.left = `${win.originalRect.x}px`;
 			win.element.style.top = `${win.originalRect.y}px`;
 			win.isMaximized = false;
 		} else {
-			// Maximize
+			// Maximize: set zoom to 100% and center the window.
 			win.originalRect = {
 				x: win.element.offsetLeft,
 				y: win.element.offsetTop,
@@ -353,35 +354,22 @@ export default class WindowManager {
 				height: win.element.offsetHeight
 			};
 			
-			// MODIFIED: Calculate max dimensions respecting viewport and absolute limits (1600x1200).
-			const maxW = Math.min(this.viewport.clientWidth / this.scale, 1600);
-			// Subtract taskbar height from available viewport height for max height calculation.
-			const maxH = Math.min((this.viewport.clientHeight - this.taskbar.offsetHeight) / this.scale, 1200);
+			// Set zoom to 100%.
+			this.scale = 1;
+			
+			// Calculate max dimensions, with some padding from the viewport edges.
+			const maxW = Math.min(this.viewport.clientWidth * 0.9, 1600);
+			const maxH = Math.min((this.viewport.clientHeight - this.taskbar.offsetHeight) * 0.9, 1200);
 			
 			win.element.style.width = `${maxW}px`;
 			win.element.style.height = `${maxH}px`;
 			
-			// MODIFIED: Center the maximized window in the current viewport, instead of filling it.
-			const viewportVisibleLeft = -this.panX / this.scale;
-			const viewportVisibleTop = -this.panY / this.scale;
-			const viewportVisibleWidth = this.viewport.clientWidth / this.scale;
-			const viewportVisibleHeight = (this.viewport.clientHeight - this.taskbar.offsetHeight) / this.scale;
-			
-			let newLeft = viewportVisibleLeft + (viewportVisibleWidth - maxW) / 2;
-			let newTop = viewportVisibleTop + (viewportVisibleHeight - maxH) / 2;
-			
-			// Ensure it doesn't go outside the desktop boundaries.
-			const desktopWidth = this.desktop.offsetWidth;
-			const desktopHeight = this.desktop.offsetHeight;
-			newLeft = Math.max(0, Math.min(newLeft, desktopWidth - maxW));
-			newTop = Math.max(0, Math.min(newTop, desktopHeight - maxH));
-			
-			win.element.style.left = `${newLeft}px`;
-			win.element.style.top = `${newTop}px`;
-			
 			win.isMaximized = true;
+			setTimeout(() => {
+				this.scrollIntoView(windowId);
+			}, 250);
+			
 		}
-		this.focus(windowId);
 		this.saveState();
 	}
 	
@@ -814,7 +802,8 @@ export default class WindowManager {
 		event.preventDefault();
 		const zoomIntensity = 0.01;
 		const delta = event.deltaY > 0 ? -zoomIntensity : zoomIntensity;
-		const newScale = Math.max(0.1, Math.min(2, this.scale + delta * this.scale));
+		// MODIFIED: Limit max zoom to 100% (1.0).
+		const newScale = Math.max(0.1, Math.min(1, this.scale + delta * this.scale));
 		
 		const viewportRect = this.viewport.getBoundingClientRect();
 		const mouseX = event.clientX - viewportRect.left;
@@ -873,7 +862,8 @@ export default class WindowManager {
 	 * Zooms in on the center of the viewport.
 	 */
 	zoomIn() {
-		this.scale = Math.min(2, this.scale * 1.2);
+		// MODIFIED: Limit max zoom to 100% (1.0).
+		this.scale = Math.min(1, this.scale * 1.2);
 		this.updateCanvasTransform(true);
 		this.saveState();
 	}
@@ -884,6 +874,29 @@ export default class WindowManager {
 	zoomOut() {
 		this.scale = Math.max(0.1, this.scale / 1.2);
 		this.updateCanvasTransform(true);
+		this.saveState();
+	}
+	
+	/**
+	 * NEW: Zooms to a specific scale, keeping the viewport center stationary.
+	 * @param {number} targetScale The target scale factor.
+	 * @param {boolean} [animated=true] - Whether to animate the transition.
+	 */
+	zoomTo(targetScale, animated = true) {
+		const viewportCenterX = this.viewport.clientWidth / 2;
+		const viewportCenterY = this.viewport.clientHeight / 2;
+		
+		// Find what point on the canvas is at the center of the viewport
+		const canvasPointX = (viewportCenterX - this.panX) / this.scale;
+		const canvasPointY = (viewportCenterY - this.panY) / this.scale;
+		
+		this.scale = targetScale;
+		
+		// Calculate the new pan values to keep that point at the center
+		this.panX = viewportCenterX - (canvasPointX * this.scale);
+		this.panY = viewportCenterY - (canvasPointY * this.scale);
+		
+		this.updateCanvasTransform(animated);
 		this.saveState();
 	}
 	

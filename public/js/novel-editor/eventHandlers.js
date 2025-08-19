@@ -226,12 +226,13 @@ export function setupOpenWindowsMenu(windowManager) {
 }
 
 /**
- * NEW: Sets up the canvas zoom controls.
+ * MODIFIED: Sets up the canvas zoom controls, including the new 100% zoom button.
  * @param {WindowManager} windowManager - The window manager instance which now handles canvas state.
  */
 export function setupCanvasControls(windowManager) {
 	const zoomInBtn = document.getElementById('zoom-in-btn');
 	const zoomOutBtn = document.getElementById('zoom-out-btn');
+	const zoom100Btn = document.getElementById('zoom-100-btn'); // NEW: Get the 100% zoom button.
 	const zoomFitBtn = document.getElementById('zoom-fit-btn');
 	
 	if (zoomInBtn) {
@@ -239,6 +240,10 @@ export function setupCanvasControls(windowManager) {
 	}
 	if (zoomOutBtn) {
 		zoomOutBtn.addEventListener('click', () => windowManager.zoomOut());
+	}
+	// NEW: Add click handler for the 100% zoom button.
+	if (zoom100Btn) {
+		zoom100Btn.addEventListener('click', () => windowManager.zoomTo(1));
 	}
 	if (zoomFitBtn) {
 		zoomFitBtn.addEventListener('click', () => windowManager.fitToView());
