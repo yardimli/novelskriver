@@ -7,7 +7,8 @@
 	use App\Http\Controllers\Auth\SocialLoginController;
 	use App\Http\Controllers\BlogController;
 	use App\Http\Controllers\ChangelogController;
-	use App\Http\Controllers\ChapterController; // NEW: Import ChapterController.
+	use App\Http\Controllers\ChapterController;
+	use App\Http\Controllers\ChapterCodexController; // NEW: Import ChapterCodexController.
 	use App\Http\Controllers\CodexEntryController;
 	use App\Http\Controllers\CoverController;
 	use App\Http\Controllers\DesignerController;
@@ -101,11 +102,14 @@
 
 		// Novel Editor Routes
 		Route::get('/novels/{novel}/edit', [NovelEditorController::class, 'index'])->name('novels.edit');
-		// NEW: Route to save editor state.
 		Route::post('/novels/{novel}/editor-state', [NovelEditorController::class, 'saveState'])->name('novels.editor.save-state');
 
-		// NEW: Chapter Route for editor window content.
+		// Chapter Route for editor window content.
 		Route::get('/chapters/{chapter}', [ChapterController::class, 'show'])->name('chapters.show');
+
+		// NEW: Routes for linking/unlinking codex entries to chapters.
+		Route::post('/chapters/{chapter}/codex-entries/{codexEntry}', [ChapterCodexController::class, 'attach'])->name('chapters.codex.attach');
+		Route::delete('/chapters/{chapter}/codex-entries/{codexEntry}', [ChapterCodexController::class, 'detach'])->name('chapters.codex.detach');
 
 		// Codex Entry Routes
 		Route::get('/novels/codex-entries/{codexEntry}', [CodexEntryController::class, 'show'])->name('codex-entries.show');

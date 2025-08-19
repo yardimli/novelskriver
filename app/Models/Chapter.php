@@ -5,6 +5,7 @@
 	use Illuminate\Database\Eloquent\Factories\HasFactory;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
+	use Illuminate\Database\Eloquent\Relations\BelongsToMany; // NEW: Import BelongsToMany.
 	use Illuminate\Database\Eloquent\Relations\HasMany;
 
 	class Chapter extends Model
@@ -41,11 +42,16 @@
 			return $this->belongsTo(Section::class);
 		}
 
+		 public function beats(): HasMany
+		 {
+		 	return $this->hasMany(Beat::class)->orderBy('order');
+		 }
+
 		/**
-		 * Get the beats (scenes) for the chapter.
+		 * NEW: Get the codex entries linked to this chapter.
 		 */
-		public function beats(): HasMany
+		public function codexEntries(): BelongsToMany
 		{
-			return $this->hasMany(Beat::class)->orderBy('order');
+			return $this->belongsToMany(CodexEntry::class, 'chapter_codex_entry');
 		}
 	}

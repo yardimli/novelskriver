@@ -8,7 +8,7 @@
 	use Illuminate\View\View;
 
 	/**
-	 * NEW: Controller to manage individual chapters, primarily for the novel editor.
+	 * Controller to manage individual chapters, primarily for the novel editor.
 	 */
 	class ChapterController extends Controller
 	{
@@ -25,8 +25,8 @@
 				return response()->json(['message' => 'Unauthorized'], 403);
 			}
 
-			// Eager load beats for display
-			$chapter->load('beats');
+			// MODIFIED: Eager load codex entries (and their images) instead of beats.
+			$chapter->load('codexEntries.image');
 
 			return view('novel-editor.partials.chapter-window', compact('chapter'));
 		}

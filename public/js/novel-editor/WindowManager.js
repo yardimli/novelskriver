@@ -18,6 +18,9 @@ export default class WindowManager {
 		this.windowCounter = 0;
 		this.minimizedOrder = ['outline-window', 'codex-window'];
 		
+		// NEW: Timeout for debouncing save state calls.
+		this.saveStateTimeout = null;
+		
 		// Properties for canvas pan and zoom state.
 		this.scale = 1;
 		this.panX = 0;
@@ -51,6 +54,9 @@ export default class WindowManager {
 		
 		const titleBar = document.createElement('div');
 		titleBar.className = 'window-title-bar flex items-center justify-between h-10 bg-gray-100 dark:bg-gray-900/70 px-3 cursor-move border-b border-gray-200 dark:border-gray-700 flex-shrink-0';
+		
+		// MODIFIED: Add double-click listener to toggle maximize/restore.
+		titleBar.addEventListener('dblclick', () => this.maximize(windowId));
 		
 		const controls = document.createElement('div');
 		controls.className = 'flex items-center gap-2';
@@ -339,9 +345,26 @@ export default class WindowManager {
 	
 	/**
 	 * MODIFIED: Saves the state of all windows and the canvas to the database via fetch.
-	 * This replaces the previous localStorage implementation.
+	 * This is now debounced to prevent excessive API calls. Every time a state change occurs,
+	 * the save timer is reset. The actual save only happens 5 seconds after the last change.
 	 */
-	async saveState() {
+	saveState() {
+		// Clear any existing timer to reset the debounce period.
+		if (this.saveStateTimeout) {
+			clearTimeout(this.saveStateTimeout);
+		}
+		
+		// Set a new timer to perform the save after 5 seconds of inactivity.
+		this.saveStateTimeout = setTimeout(() => {
+			this._performSaveState();
+		}, 1000); // 5000 milliseconds = 5 seconds
+	}
+	
+	/**
+	 * NEW: The actual implementation of the state saving logic.
+	 * This is called by the debounced saveState method.
+	 */
+	async _performSaveState() {
 		// Collect window states
 		const windowsState = [];
 		this.windows.forEach((win, id) => {

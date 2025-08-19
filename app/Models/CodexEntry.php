@@ -5,6 +5,7 @@
 	use Illuminate\Database\Eloquent\Factories\HasFactory;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
+	use Illuminate\Database\Eloquent\Relations\BelongsToMany; // NEW: Import BelongsToMany.
 	use Illuminate\Database\Eloquent\Relations\HasOne;
 	use Illuminate\Support\Facades\Storage;
 
@@ -53,6 +54,14 @@
 		}
 
 		/**
+		 * NEW: Get the chapters that this codex entry is linked to.
+		 */
+		public function chapters(): BelongsToMany
+		{
+			return $this->belongsToMany(Chapter::class, 'chapter_codex_entry');
+		}
+
+		/**
 		 * Accessor to get the public URL for the entry's image or a placeholder.
 		 *
 		 * @return string
@@ -67,7 +76,7 @@
 		}
 
 		/**
-		 * NEW: Accessor to get the public URL for the entry's thumbnail or a placeholder.
+		 * Accessor to get the public URL for the entry's thumbnail or a placeholder.
 		 *
 		 * @return string
 		 */
