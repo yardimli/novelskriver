@@ -4,15 +4,18 @@
 
 	use App\Models\CodexEntry;
 	use App\Models\Image;
+	use App\Models\Novel; // MODIFIED: Import Novel model.
 	use App\Services\FalAiService;
 	use App\Services\ImageUploadService;
 	use Illuminate\Http\JsonResponse;
 	use Illuminate\Http\Request;
 	use Illuminate\Http\UploadedFile;
 	use Illuminate\Support\Facades\Auth;
+	use Illuminate\Support\Facades\DB; // MODIFIED: Import DB facade.
 	use Illuminate\Support\Facades\Log;
 	use Illuminate\Support\Facades\Storage;
 	use Illuminate\Support\Facades\Validator;
+	use Illuminate\Validation\Rule; // MODIFIED: Import Rule for validation.
 	use Illuminate\View\View;
 	use Throwable;
 
@@ -38,6 +41,114 @@
 			$codexEntry->load('image', 'linkedEntries.image');
 
 			return view('novel-editor.partials.codex-entry-window', compact('codexEntry'));
+		}
+
+		/**
+		 * NEW: Store a newly created codex entry in storage.
+		 *
+		 * @param Request $request
+		 * @param Novel $novel
+		 * @param ImageUploadService $imageUploader
+		 * @return JsonResponse
+		 */
+		public function store(Request $request, Novel $novel, ImageUploadService $imageUploader): JsonResponse
+		{
+			// Authorization check
+			if (Auth::id() !== $novel->user_id) {
+				return response()->json(['message' => 'Unauthorized'], 403);
+			}
+
+			$validator = Validator::make($request->all(), [
+				'title' => 'required|string|max:255',
+				'description' => 'nullable|string|max:1000',
+				'content' => 'nullable|string',
+				'codex_category_id' => [
+					'nullable',
+					Rule::exists('codex_categories', 'id')->where(function ($query) use ($novel) {
+						$query->where('novel_id', $novel->id);
+					}),
+				],
+				'new_category_name' => 'nullable|string|max:255',
+				'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+			]);
+
+			// Custom validation logic to ensure a category is selected or created.
+			$validator->after(function ($validator) use ($request) {
+				if (empty($request->input('codex_category_id')) && empty($request->input('new_category_name'))) {
+					$validator->errors()->add('codex_category_id', 'A category is required. Please select an existing one or create a new one.');
+				}
+			});
+
+			if ($validator->fails()) {
+				return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+			}
+
+			try {
+				$categoryId = $request->input('codex_category_id');
+				$newCategoryData = null;
+
+				DB::beginTransaction();
+
+				// Create a new category if a name is provided
+				if ($request->filled('new_category_name')) {
+					$newCategory = $novel->codexCategories()->create([
+						'name' => $request->input('new_category_name'),
+					]);
+					$categoryId = $newCategory->id;
+					$newCategoryData = ['id' => $newCategory->id, 'name' => $newCategory->name];
+				}
+
+				// Create the codex entry
+				$codexEntry = $novel->codexEntries()->create([
+					'codex_category_id' => $categoryId,
+					'title' => $request->input('title'),
+					'description' => $request->input('description'),
+					'content' => $request->input('content'),
+				]);
+
+				// Handle image upload if present
+				if ($request->hasFile('image')) {
+					/** @var UploadedFile $imageFile */
+					$imageFile = $request->file('image');
+					$paths = $imageUploader->uploadImageWithThumbnail(
+						file: $imageFile,
+						uploadConfigKey: 'novel_codex_entries',
+						customSubdirectory: (string) $novel->id . '/' . $codexEntry->id,
+						customFilenameBase: 'codex-image-upload'
+					);
+
+					Image::create([
+						'user_id' => Auth::id(),
+						'novel_id' => $novel->id,
+						'codex_entry_id' => $codexEntry->id,
+						'image_local_path' => $paths['original_path'],
+						'thumbnail_local_path' => $paths['thumbnail_path'],
+						'image_type' => 'upload',
+					]);
+				}
+
+				DB::commit();
+
+				// Eager load the image for the response payload
+				$codexEntry->load('image');
+
+				return response()->json([
+					'success' => true,
+					'message' => 'Codex entry created successfully.',
+					'codexEntry' => [
+						'id' => $codexEntry->id,
+						'title' => $codexEntry->title,
+						'description' => $codexEntry->description,
+						'thumbnail_url' => $codexEntry->thumbnail_url,
+						'category_id' => $codexEntry->codex_category_id,
+					],
+					'newCategory' => $newCategoryData,
+				], 201);
+			} catch (Throwable $e) {
+				DB::rollBack();
+				Log::error('Failed to create codex entry for novel ID ' . $novel->id . ': ' . $e->getMessage());
+				return response()->json(['message' => 'Failed to create codex entry: ' . $e->getMessage()], 500);
+			}
 		}
 
 		/**

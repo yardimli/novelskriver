@@ -113,6 +113,7 @@
 
 		// Codex Entry Routes
 		Route::get('/novels/codex-entries/{codexEntry}', [CodexEntryController::class, 'show'])->name('codex-entries.show');
+		Route::post('/novels/{novel}/codex-entries', [CodexEntryController::class, 'store'])->name('codex-entries.store'); // NEW: Route to store a new codex entry.
 		Route::post('/codex-entries/{codexEntry}/generate-image', [CodexEntryController::class, 'generateImage'])->name('codex-entries.generate-image');
 		Route::post('/codex-entries/{codexEntry}/upload-image', [CodexEntryController::class, 'uploadImage'])->name('codex-entries.upload-image');
 

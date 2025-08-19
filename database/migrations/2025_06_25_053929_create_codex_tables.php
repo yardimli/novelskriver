@@ -27,7 +27,7 @@
 				$table->foreignId('codex_category_id')->constrained('codex_categories')->onDelete('cascade');
 				$table->string('title');
 				$table->text('description')->nullable();
-				$table->longText('content');
+				$table->longText('content')->nullable();
 				$table->string('image_path')->nullable()->comment('Path to an associated image, like a map or character portrait.');
 				$table->timestamps();
 			});

@@ -359,4 +359,243 @@ document.addEventListener('DOMContentLoaded', () => {
 		`;
 		return div;
 	}
+	
+	// --- NEW: Create New Codex Entry ---
+	
+	const newCodexModal = document.getElementById('new-codex-entry-modal');
+	const newCodexForm = document.getElementById('new-codex-entry-form');
+	const novelId = document.body.dataset.novelId;
+	
+	// 1. Open Modal
+	desktop.addEventListener('click', (event) => {
+		if (event.target.closest('.js-open-new-codex-modal')) {
+			if (newCodexModal) {
+				newCodexModal.classList.remove('hidden');
+			}
+		}
+	});
+	
+	// 2. Close Modal
+	if (newCodexModal) {
+		newCodexModal.addEventListener('click', (event) => {
+			if (event.target.closest('.js-close-new-codex-modal') || event.target === newCodexModal) {
+				resetAndCloseNewCodexModal();
+			}
+		});
+	}
+	
+	// 3. Handle "Create New Category" dropdown
+	if (newCodexForm) {
+		const categorySelect = newCodexForm.querySelector('#new-codex-category');
+		const newCategoryWrapper = newCodexForm.querySelector('#new-category-wrapper');
+		const newCategoryInput = newCodexForm.querySelector('#new-category-name');
+		
+		categorySelect.addEventListener('change', () => {
+			if (categorySelect.value === 'new') {
+				newCategoryWrapper.classList.remove('hidden');
+			} else {
+				newCategoryWrapper.classList.add('hidden');
+				newCategoryInput.value = ''; // Clear input when hiding
+			}
+		});
+	}
+	
+	// 4. Handle Form Submission
+	if (newCodexForm) {
+		newCodexForm.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			
+			const submitBtn = newCodexForm.querySelector('.js-new-codex-submit-btn');
+			setButtonLoadingState(submitBtn, true);
+			clearFormErrors(newCodexForm);
+			
+			const formData = new FormData(newCodexForm);
+			
+			try {
+				const response = await fetch(`/novels/${novelId}/codex-entries`, {
+					method: 'POST',
+					headers: {
+						'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+						'Accept': 'application/json',
+					},
+					body: formData,
+				});
+				
+				const data = await response.json();
+				
+				if (!response.ok) {
+					if (response.status === 422) {
+						displayFormErrors(newCodexForm, data.errors);
+					} else {
+						displayGenericError(newCodexForm, data.message || 'An unknown error occurred.');
+					}
+					throw new Error(data.message || 'Form submission failed');
+				}
+				
+				// --- Success ---
+				resetAndCloseNewCodexModal();
+				
+				// Update UI
+				if (data.newCategory) {
+					addNewCategoryToCodexWindow(data.newCategory);
+				}
+				const newEntryButton = addNewEntryToCategoryList(data.codexEntry);
+				
+				// Open the new window by simulating a click
+				if (newEntryButton) {
+					newEntryButton.click();
+				}
+				
+			} catch (error) {
+				console.error('Error creating codex entry:', error);
+			} finally {
+				setButtonLoadingState(submitBtn, false);
+			}
+		});
+	}
+	
+	/**
+	 * Resets the new codex entry form and closes the modal.
+	 */
+	function resetAndCloseNewCodexModal() {
+		if (newCodexModal) {
+			newCodexModal.classList.add('hidden');
+			if (newCodexForm) {
+				newCodexForm.reset();
+				clearFormErrors(newCodexForm);
+				// Manually hide the new category input
+				newCodexForm.querySelector('#new-category-wrapper').classList.add('hidden');
+			}
+		}
+	}
+	
+	/**
+	 * Clears all validation error messages from the form.
+	 * @param {HTMLFormElement} form
+	 */
+	function clearFormErrors(form) {
+		form.querySelectorAll('.js-error-message').forEach(el => {
+			el.textContent = '';
+			el.classList.add('hidden');
+		});
+		const genericErrorContainer = form.querySelector('#new-codex-error-container');
+		if (genericErrorContainer) {
+			genericErrorContainer.classList.add('hidden');
+			genericErrorContainer.textContent = '';
+		}
+	}
+	
+	/**
+	 * Displays validation errors on the form.
+	 * @param {HTMLFormElement} form
+	 * @param {object} errors
+	 */
+	function displayFormErrors(form, errors) {
+		for (const field in errors) {
+			// Handle mapping the category error to the select element
+			const inputName = field === 'codex_category_id' ? 'codex_category_id' : field;
+			const input = form.querySelector(`[name="${inputName}"]`);
+			if (input) {
+				const errorEl = input.parentElement.querySelector('.js-error-message');
+				if (errorEl) {
+					errorEl.textContent = errors[field][0];
+					errorEl.classList.remove('hidden');
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Displays a generic error message at the top of the form.
+	 * @param {HTMLFormElement} form
+	 * @param {string} message
+	 */
+	function displayGenericError(form, message) {
+		const genericErrorContainer = form.querySelector('#new-codex-error-container');
+		if (genericErrorContainer) {
+			genericErrorContainer.textContent = message;
+			genericErrorContainer.classList.remove('hidden');
+		}
+	}
+	
+	/**
+	 * Creates and appends the HTML for a new codex entry button to the correct category list.
+	 * @param {object} entryData - The data for the new entry.
+	 * @returns {HTMLButtonElement|null} The newly created button element.
+	 */
+	function addNewEntryToCategoryList(entryData) {
+		const codexWindowContent = document.querySelector('#codex-window .p-4');
+		if (!codexWindowContent) return null;
+		
+		const categoryContainer = codexWindowContent.querySelector(`#codex-category-${entryData.category_id}`);
+		if (!categoryContainer) return null;
+		
+		const listContainer = categoryContainer.querySelector('.js-codex-entries-list');
+		if (!listContainer) return null;
+		
+		// Remove "No entries" message if it exists
+		const emptyMsg = listContainer.querySelector('p');
+		if (emptyMsg) emptyMsg.remove();
+		
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'js-open-codex-entry js-draggable-codex w-full text-left p-2 rounded bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 flex items-start gap-3';
+		button.dataset.entryId = entryData.id;
+		button.dataset.entryTitle = entryData.title;
+		button.draggable = true;
+		
+		button.innerHTML = `
+            <img src="${entryData.thumbnail_url}" alt="Thumbnail for ${entryData.title}" class="w-12 h-12 object-cover rounded flex-shrink-0 bg-gray-300 dark:bg-gray-600 pointer-events-none">
+            <div class="flex-grow min-w-0 pointer-events-none">
+                <h4 class="font-semibold truncate">${entryData.title}</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">${entryData.description || ''}</p>
+            </div>
+        `;
+		
+		listContainer.appendChild(button);
+		
+		// Update category count
+		const countSpan = categoryContainer.querySelector('.js-codex-category-count');
+		if (countSpan) {
+			const currentCount = listContainer.children.length;
+			const itemText = currentCount === 1 ? 'item' : 'items';
+			countSpan.textContent = `(${currentCount} ${itemText})`;
+		}
+		
+		return button;
+	}
+	
+	/**
+	 * Creates and appends the HTML for a new category section in the codex window.
+	 * @param {object} categoryData - The data for the new category.
+	 */
+	function addNewCategoryToCodexWindow(categoryData) {
+		const codexWindowContent = document.querySelector('#codex-window .p-4');
+		if (!codexWindowContent) return;
+		
+		// Check if it already exists to prevent race conditions
+		if (document.getElementById(`codex-category-${categoryData.id}`)) return;
+		
+		const div = document.createElement('div');
+		div.id = `codex-category-${categoryData.id}`;
+		div.innerHTML = `
+            <h3 class="text-lg font-bold text-teal-600 dark:text-teal-400 sticky top-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm py-2 -mx-1 px-1">
+                ${categoryData.name}
+                <span class="js-codex-category-count text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">(0 items)</span>
+            </h3>
+            <div class="js-codex-entries-list mt-2 space-y-2">
+                <p class="text-sm text-gray-500 px-2">No entries in this category yet.</p>
+            </div>
+        `;
+		
+		codexWindowContent.appendChild(div);
+		
+		// Also add the new category to the dropdown in the modal
+		const categorySelect = document.getElementById('new-codex-category');
+		if (categorySelect) {
+			const newOption = new Option(categoryData.name, categoryData.id);
+			// Insert before the "Create New" option
+			categorySelect.insertBefore(newOption, categorySelect.options[categorySelect.options.length - 1]);
+		}
+	}
 });

@@ -1,11 +1,24 @@
+{{-- MODIFIED: Added a button to open the "New Codex Entry" modal. --}}
 <div class="p-4 space-y-4">
+	<div class="px-1 pb-2 border-b border-gray-200 dark:border-gray-700">
+		<button type="button" class="js-open-new-codex-modal w-full text-sm px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white rounded-md transition-colors flex items-center justify-center gap-2">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+				<path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+			</svg>
+			New Entry
+		</button>
+	</div>
+	
 	@forelse($novel->codexCategories as $category)
-		<div>
+		{{-- MODIFIED: Added an ID to the category container for easier targeting by JS. --}}
+		<div id="codex-category-{{ $category->id }}">
 			<h3 class="text-lg font-bold text-teal-600 dark:text-teal-400 sticky top-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm py-2 -mx-1 px-1">
 				{{ $category->name }}
-				<span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({{ $category->entries_count }} {{ Str::plural('item', $category->entries_count) }})</span>
+				{{-- MODIFIED: Added a span with a class for the count to be updatable by JS. --}}
+				<span class="js-codex-category-count text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({{ $category->entries_count }} {{ Str::plural('item', $category->entries_count) }})</span>
 			</h3>
-			<div class="mt-2 space-y-2">
+			{{-- MODIFIED: Added a class to the entries list container for easier targeting by JS. --}}
+			<div class="js-codex-entries-list mt-2 space-y-2">
 				@forelse($category->entries as $entry)
 					{{-- MODIFIED: Made this button draggable to allow linking to chapters. --}}
 					<button type="button"

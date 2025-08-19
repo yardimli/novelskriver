@@ -102,5 +102,78 @@
 	@include('novel-editor.partials.codex-window', ['novel' => $novel])
 </template>
 
+{{-- NEW: Modal for creating a new codex entry. --}}
+<div id="new-codex-entry-modal" class="js-new-codex-modal fixed inset-0 bg-black/60 z-[9998] flex items-center justify-center p-4 hidden" aria-labelledby="new-codex-modal-title" role="dialog" aria-modal="true">
+	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
+		<div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
+			<h3 id="new-codex-modal-title" class="text-lg font-semibold">Create New Codex Entry</h3>
+			<button type="button" class="js-close-new-codex-modal text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none" aria-label="Close">&times;</button>
+		</div>
+		<form id="new-codex-entry-form" novalidate>
+			<div class="p-6 max-h-[70vh] overflow-y-auto space-y-4">
+				{{-- General Error Message --}}
+				<div id="new-codex-error-container" class="hidden p-3 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-600 rounded-md text-sm text-red-700 dark:text-red-200"></div>
+				
+				{{-- Title --}}
+				<div>
+					<label for="new-codex-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Title <span class="text-red-500">*</span></label>
+					<input type="text" id="new-codex-title" name="title" class="mt-1 block w-full rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-teal-500 focus:border-teal-500" required>
+					<p class="js-error-message mt-1 text-xs text-red-500 hidden"></p>
+				</div>
+				
+				{{-- Category --}}
+				<div>
+					<label for="new-codex-category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category <span class="text-red-500">*</span></label>
+					<select id="new-codex-category" name="codex_category_id" class="mt-1 block w-full rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-teal-500 focus:border-teal-500">
+						<option value="">Select a category...</option>
+						@foreach($novel->codexCategories as $category)
+							<option value="{{ $category->id }}">{{ $category->name }}</option>
+						@endforeach
+						<option value="new">-- Create New Category --</option>
+					</select>
+					<p class="js-error-message mt-1 text-xs text-red-500 hidden"></p>
+				</div>
+				
+				{{-- New Category Name Input --}}
+				<div id="new-category-wrapper" class="hidden pl-4 border-l-4 border-teal-500">
+					<label for="new-category-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Category Name</label>
+					<input type="text" id="new-category-name" name="new_category_name" class="mt-1 block w-full rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-teal-500 focus:border-teal-500">
+					<p class="js-error-message mt-1 text-xs text-red-500 hidden"></p>
+				</div>
+				
+				{{-- Description --}}
+				<div>
+					<label for="new-codex-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description (Short Summary)</label>
+					<textarea id="new-codex-description" name="description" rows="2" class="mt-1 block w-full rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-teal-500 focus:border-teal-500"></textarea>
+					<p class="js-error-message mt-1 text-xs text-red-500 hidden"></p>
+				</div>
+				
+				{{-- Content --}}
+				<div>
+					<label for="new-codex-content" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content (Detailed Information)</label>
+					<textarea id="new-codex-content" name="content" rows="5" class="mt-1 block w-full rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-teal-500 focus:border-teal-500"></textarea>
+					<p class="js-error-message mt-1 text-xs text-red-500 hidden"></p>
+				</div>
+				
+				{{-- Image Upload --}}
+				<div>
+					<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Image (Optional)</label>
+					<div class="mt-1">
+						<input type="file" id="new-codex-image" name="image" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 dark:file:bg-teal-900/50 dark:file:text-teal-300 dark:hover:file:bg-teal-900" accept="image/png, image/jpeg, image/gif, image/webp">
+						<p class="js-error-message mt-1 text-xs text-red-500 hidden"></p>
+					</div>
+				</div>
+			</div>
+			<div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700 flex justify-end items-center gap-3">
+				<button type="button" class="js-close-new-codex-modal px-4 py-2 rounded-md text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
+				<button type="submit" class="js-new-codex-submit-btn bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-md text-sm flex items-center justify-center gap-2 w-28">
+					<span class="js-btn-text">Create</span>
+					<span class="js-spinner hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+				</button>
+			</div>
+		</form>
+	</div>
+</div>
+
 </body>
 </html>
