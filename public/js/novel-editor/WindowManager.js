@@ -327,12 +327,33 @@ export default class WindowManager {
 				width: win.element.offsetWidth,
 				height: win.element.offsetHeight
 			};
-			// Maximize now considers the canvas scale.
-			const viewportRect = this.viewport.getBoundingClientRect();
-			win.element.style.width = `${viewportRect.width / this.scale}px`;
-			win.element.style.height = `${(viewportRect.height - this.taskbar.offsetHeight) / this.scale}px`;
-			win.element.style.left = `${-this.panX / this.scale}px`;
-			win.element.style.top = `${-this.panY / this.scale}px`;
+			
+			// MODIFIED: Calculate max dimensions respecting viewport and absolute limits (1600x1200).
+			const maxW = Math.min(this.viewport.clientWidth / this.scale, 1600);
+			// Subtract taskbar height from available viewport height for max height calculation.
+			const maxH = Math.min((this.viewport.clientHeight - this.taskbar.offsetHeight) / this.scale, 1200);
+			
+			win.element.style.width = `${maxW}px`;
+			win.element.style.height = `${maxH}px`;
+			
+			// MODIFIED: Center the maximized window in the current viewport, instead of filling it.
+			const viewportVisibleLeft = -this.panX / this.scale;
+			const viewportVisibleTop = -this.panY / this.scale;
+			const viewportVisibleWidth = this.viewport.clientWidth / this.scale;
+			const viewportVisibleHeight = (this.viewport.clientHeight - this.taskbar.offsetHeight) / this.scale;
+			
+			let newLeft = viewportVisibleLeft + (viewportVisibleWidth - maxW) / 2;
+			let newTop = viewportVisibleTop + (viewportVisibleHeight - maxH) / 2;
+			
+			// Ensure it doesn't go outside the desktop boundaries.
+			const desktopWidth = this.desktop.offsetWidth;
+			const desktopHeight = this.desktop.offsetHeight;
+			newLeft = Math.max(0, Math.min(newLeft, desktopWidth - maxW));
+			newTop = Math.max(0, Math.min(newTop, desktopHeight - maxH));
+			
+			win.element.style.left = `${newLeft}px`;
+			win.element.style.top = `${newTop}px`;
+			
 			win.isMaximized = true;
 		}
 		this.focus(windowId);
@@ -346,9 +367,21 @@ export default class WindowManager {
 		let offsetX; let offsetY;
 		
 		const onMouseMove = (e) => {
-			// Dragging must account for the canvas scale.
-			win.style.left = `${win.startLeft + (e.clientX - win.startX) / this.scale}px`;
-			win.style.top = `${win.startTop + (e.clientY - win.startY) / this.scale}px`;
+			// MODIFIED: Add boundary checks to keep window within the desktop.
+			let newLeft = win.startLeft + (e.clientX - win.startX) / this.scale;
+			let newTop = win.startTop + (e.clientY - win.startY) / this.scale;
+			
+			const desktopWidth = this.desktop.offsetWidth;
+			const desktopHeight = this.desktop.offsetHeight;
+			const winWidth = win.offsetWidth;
+			const winHeight = win.offsetHeight;
+			
+			// Clamp the position within the desktop boundaries.
+			newLeft = Math.max(0, Math.min(newLeft, desktopWidth - winWidth));
+			newTop = Math.max(0, Math.min(newTop, desktopHeight - winHeight));
+			
+			win.style.left = `${newLeft}px`;
+			win.style.top = `${newTop}px`;
 		};
 		
 		const onMouseUp = () => {
@@ -390,8 +423,25 @@ export default class WindowManager {
 		let startX; let startY; let startWidth; let startHeight;
 		
 		const onMouseMove = (e) => {
-			const newWidth = startWidth + (e.clientX - startX) / this.scale;
-			const newHeight = startHeight + (e.clientY - startY) / this.scale;
+			let newWidth = startWidth + (e.clientX - startX) / this.scale;
+			let newHeight = startHeight + (e.clientY - startY) / this.scale;
+			
+			// MODIFIED: Constrain window size to max limits and desktop boundaries.
+			const maxW = Math.min(this.viewport.clientWidth / this.scale, 1600);
+			const maxH = Math.min(this.viewport.clientHeight / this.scale, 1200);
+			
+			// Apply max size constraints.
+			newWidth = Math.min(newWidth, maxW);
+			newHeight = Math.min(newHeight, maxH);
+			
+			// Ensure the window does not resize beyond the desktop's right and bottom edges.
+			if (win.offsetLeft + newWidth > this.desktop.offsetWidth) {
+				newWidth = this.desktop.offsetWidth - win.offsetLeft;
+			}
+			if (win.offsetTop + newHeight > this.desktop.offsetHeight) {
+				newHeight = this.desktop.offsetHeight - win.offsetTop;
+			}
+			
 			win.style.width = `${newWidth}px`;
 			win.style.height = `${newHeight}px`;
 		};
