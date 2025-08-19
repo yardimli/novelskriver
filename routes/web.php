@@ -113,7 +113,9 @@
 
 		// Codex Entry Routes
 		Route::get('/novels/codex-entries/{codexEntry}', [CodexEntryController::class, 'show'])->name('codex-entries.show');
-		Route::post('/novels/{novel}/codex-entries', [CodexEntryController::class, 'store'])->name('codex-entries.store'); // NEW: Route to store a new codex entry.
+		Route::post('/novels/{novel}/codex-entries', [CodexEntryController::class, 'store'])->name('codex-entries.store');
+		Route::patch('/codex-entries/{codexEntry}', [CodexEntryController::class, 'update'])->name('codex-entries.update'); // NEW: Route to update a codex entry.
+		Route::post('/codex-entries/{codexEntry}/process-text', [CodexEntryController::class, 'processText'])->name('codex-entries.process-text'); // NEW: Route for AI text processing.
 		Route::post('/codex-entries/{codexEntry}/generate-image', [CodexEntryController::class, 'generateImage'])->name('codex-entries.generate-image');
 		Route::post('/codex-entries/{codexEntry}/upload-image', [CodexEntryController::class, 'uploadImage'])->name('codex-entries.upload-image');
 

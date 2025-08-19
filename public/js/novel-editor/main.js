@@ -1,6 +1,7 @@
 import WindowManager from './WindowManager.js';
 import { setupCodexEntryHandler, setupChapterHandler, setupThemeToggle, setupOpenWindowsMenu, setupCanvasControls } from './eventHandlers.js';
-import { setupChapterEditor } from './chapter-editor.js'; // NEW: Import chapter editor interactions.
+import { setupChapterEditor } from './chapter-editor.js';
+import { setupCodexContentEditor } from './codex-content-editor.js'; // NEW: Import codex content editor.
 
 /**
  * Initializes the novel editor's multi-window desktop environment.
@@ -27,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Initialize event handlers for various UI interactions.
 	setupCodexEntryHandler(desktop, windowManager);
 	setupChapterHandler(desktop, windowManager);
-	setupChapterEditor(desktop); // NEW: Call the chapter editor setup for drag-drop and linking.
+	setupChapterEditor(desktop);
+	setupCodexContentEditor(desktop); // NEW: Call the codex content editor setup.
 	setupThemeToggle();
 	setupOpenWindowsMenu(windowManager);
 	setupCanvasControls(windowManager);

@@ -33,12 +33,10 @@
     @apply text-black dark:text-white;
 }
 
-/* NEW: Style for selected windows to give them a visual highlight. */
 .selected {
     @apply ring-2 ring-blue-500;
 }
 
-/* NEW: Styles for the pannable canvas */
 #desktop {
     /* Provides a subtle grid background for the canvas */
     background-image:
@@ -56,7 +54,46 @@
             linear-gradient(to bottom, theme('colors.gray.800') 1px, transparent 1px);
 }
 
-/* NEW: Style for the viewport when panning is active */
 #viewport.panning #desktop {
     cursor: grabbing;
+}
+
+/* NEW: Styles for contenteditable placeholders */
+[contenteditable][data-placeholder]:empty:before {
+    content: attr(data-placeholder);
+    @apply text-gray-400 dark:text-gray-500 italic pointer-events-none;
+}
+
+/* NEW: Styles for the floating codex toolbar */
+.js-codex-toolbar button {
+    @apply p-1.5 rounded hover:bg-gray-600 transition-colors flex-1 text-center font-mono font-bold text-sm;
+}
+.js-codex-toolbar button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+.js-codex-toolbar .js-codex-edit-btn[data-command="undo"],
+.js-codex-toolbar .js-codex-edit-btn[data-command="redo"] {
+    @apply flex-none; /* Don't stretch undo/redo buttons */
+}
+.js-codex-toolbar .js-highlight-dropdown-container,
+.js-codex-toolbar .js-ai-dropdown-container {
+    @apply flex-initial; /* Let these containers size to their content */
+}
+
+/* NEW: Styles for highlighted text spans */
+.highlight-yellow {
+    background-color: #fef08a;
+    color: #713f12;
+}
+.highlight-green {
+    background-color: #a7f3d0;
+    color: #14532d;
+}
+.highlight-blue {
+    background-color: #bfdbfe;
+    color: #1e3a8a;
+}
+.highlight-red {
+    background-color: #fecaca;
+    color: #7f1d1d;
 }

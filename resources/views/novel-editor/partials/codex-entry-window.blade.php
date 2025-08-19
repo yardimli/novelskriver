@@ -1,6 +1,7 @@
 {{-- This file contains the content for a single codex entry window. --}}
-{{-- MODIFIED: Added drop zone class and section for linked entries. --}}
 <div class="p-4 flex flex-col h-full codex-entry-window-content select-text js-codex-drop-zone transition-colors duration-300" data-entry-id="{{ $codexEntry->id }}" data-entry-title="{{ $codexEntry->title }}">
+	{{-- MODIFIED: The floating toolbar has been removed from here and is now a global element. --}}
+	
 	<div class="flex-grow flex gap-4 overflow-hidden">
 		{{-- Image Section --}}
 		<div class="w-1/3 flex-shrink-0">
@@ -16,25 +17,27 @@
 		{{-- Details Section --}}
 		<div class="w-2/3 flex flex-col min-w-0">
 			{{-- Title and description are now in a non-scrolling, shrinking header area. --}}
-			<div class="flex-shrink-0 prose prose-sm dark:prose-invert max-w-none">
-				<h2>{{ $codexEntry->title }}</h2>
-				@if($codexEntry->description)
-					<p class="lead">{{ $codexEntry->description }}</p>
-				@endif
+			<div class="flex-shrink-0 prose-sm dark:prose-invert max-w-none">
+				{{-- MODIFIED: Title is now an input field --}}
+				<input type="text" name="title" value="{{ $codexEntry->title }}" class="js-codex-title-input text-2xl font-bold w-full bg-transparent border-0 p-0 focus:ring-0 focus:border-b-2 focus:border-teal-500" placeholder="Codex Entry Title">
+				
+				{{-- MODIFIED: Description is now a contenteditable div --}}
+				<div class="js-codex-editable lead mt-2" data-name="description" contenteditable="true" data-placeholder="Enter a short summary...">{{ $codexEntry->description }}</div>
 			</div>
 			
 			{{-- The main content is in a scrollable container that fills the remaining space. --}}
-			<div class="mt-4 flex-grow overflow-y-auto prose prose-sm dark:prose-invert max-w-none">
+			{{-- MODIFIED: Content is now a contenteditable div --}}
+			<div class="mt-4 flex-grow overflow-y-auto prose prose-sm dark:prose-invert max-w-none js-codex-editable" data-name="content" contenteditable="true" data-placeholder="Enter detailed content here...">
 				@if($codexEntry->content)
-					{!! nl2br(e($codexEntry->content)) !!}
+					{!! $codexEntry->content !!}
 				@else
-					<p class="text-gray-500 italic">No detailed content available.</p>
+					{{-- Empty for placeholder to work --}}
 				@endif
 			</div>
 		</div>
 	</div>
 	
-	{{-- NEW: Section to display linked codex entries as tags. --}}
+	{{-- Section to display linked codex entries as tags. --}}
 	<div class="js-codex-tags-wrapper mt-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700 pt-3 @if($codexEntry->linkedEntries->isEmpty()) hidden @endif">
 		<h4 class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Linked Entries</h4>
 		<div class="js-codex-tags-container flex flex-wrap gap-2">

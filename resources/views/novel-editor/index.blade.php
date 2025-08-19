@@ -36,7 +36,6 @@
 	@vite(['resources/css/editor.css'])
 
 </head>
-{{-- MODIFIED: Added `select-none` to the body to disable text selection globally within the editor. --}}
 <body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden select-none"
       data-novel-id="{{ $novel->id }}"
       data-editor-state="{{ json_encode($novel->editor_state) }}">
@@ -69,12 +68,11 @@
 		{{-- Minimized windows will be dynamically inserted here --}}
 	</div>
 	
-	{{-- MODIFIED: Zoom controls group with new 100% zoom button --}}
+	{{-- Zoom controls group with new 100% zoom button --}}
 	<div class="ml-auto flex items-center gap-1">
 		<button id="zoom-out-btn" type="button" title="Zoom Out" class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none rounded-lg text-sm p-2.5">
 			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" /></svg>
 		</button>
-		{{-- NEW: Button to set zoom to 100% (actual size) --}}
 		<button id="zoom-100-btn" type="button" title="Zoom to 100%" class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none rounded-lg text-sm p-2.5">
 			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25-2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" /></svg>
 		</button>
@@ -102,7 +100,7 @@
 	@include('novel-editor.partials.codex-window', ['novel' => $novel])
 </template>
 
-{{-- NEW: Modal for creating a new codex entry. --}}
+{{-- Modal for creating a new codex entry. --}}
 <div id="new-codex-entry-modal" class="js-new-codex-modal fixed inset-0 bg-black/60 z-[9998] flex items-center justify-center p-4 hidden" aria-labelledby="new-codex-modal-title" role="dialog" aria-modal="true">
 	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
 		<div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
@@ -160,7 +158,6 @@
 					<label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Image (Optional)</label>
 					<div class="mt-1">
 						<input type="file" id="new-codex-image" name="image" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 dark:file:bg-teal-900/50 dark:file:text-teal-300 dark:hover:file:bg-teal-900" accept="image/png, image/jpeg, image/gif, image/webp">
-						{{-- NEW: Informational text about image generation. --}}
 						<p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Image can be uploaded or generated with AI from the desktop later.</p>
 						<p class="js-error-message mt-1 text-xs text-red-500 hidden"></p>
 					</div>
@@ -174,6 +171,67 @@
 				</button>
 			</div>
 		</form>
+	</div>
+</div>
+
+{{-- NEW: Floating toolbar for contenteditable areas. It's a single global instance. --}}
+<div id="codex-floating-toolbar" class="js-codex-toolbar fixed z-[9999] bg-gray-800 text-white rounded-lg shadow-lg p-1 flex flex-col gap-1 hidden" style="width: 300px;">
+	{{-- Row 1: Word Count & History --}}
+	<div class="flex items-center justify-between text-xs px-2 py-0.5">
+		<span class="js-word-count">0 words selected</span>
+		<div class="flex items-center gap-2">
+			<button type="button" class="js-codex-edit-btn" data-command="undo" title="Undo">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/></svg>
+			</button>
+			<button type="button" class="js-codex-edit-btn" data-command="redo" title="Redo">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+			</button>
+		</div>
+	</div>
+	{{-- Row 2: Formatting --}}
+	<div class="flex items-center gap-1 bg-gray-700 p-1 rounded">
+		<button type="button" class="js-codex-edit-btn" data-command="bold" title="Bold">B</button>
+		<button type="button" class="js-codex-edit-btn" data-command="italic" title="Italic">I</button>
+		<button type="button" class="js-codex-edit-btn" data-command="underline" title="Underline">U</button>
+		<div class="relative js-highlight-dropdown-container">
+			<button type="button" class="js-codex-edit-btn" title="Highlight">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.823 2.215a.5.5 0 0 0-.693-.693l-1.359.235-2.533-2.533a.5.5 0 0 0-.707 0L8.294 1.453a.5.5 0 0 0 0 .707l2.533 2.533-.235 1.359a.5.5 0 0 0 .693.693l1.55-1.55 2.43 2.43a.5.5 0 0 0 .707 0l2.235-2.235a.5.5 0 0 0 0-.707L15.823 2.215zm-1.06 1.06-2.43-2.43 2.235-2.235 2.43 2.43-2.235 2.235z"/><path d="M1.25 9.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25zM1.25 12.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25zM1.25 15.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25z"/></svg>
+			</button>
+			<div class="js-highlight-dropdown absolute bottom-full mb-1 bg-gray-700 rounded p-1 hidden flex-col gap-1 w-32">
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs" data-bg="highlight-yellow">
+					<span class="w-4 h-4 rounded-full" style="background-color: #fef08a;"></span> Yellow
+				</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs" data-bg="highlight-green">
+					<span class="w-4 h-4 rounded-full" style="background-color: #a7f3d0;"></span> Green
+				</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs" data-bg="highlight-blue">
+					<span class="w-4 h-4 rounded-full" style="background-color: #bfdbfe;"></span> Blue
+				</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs" data-bg="highlight-red">
+					<span class="w-4 h-4 rounded-full" style="background-color: #fecaca;"></span> Red
+				</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left text-xs" data-bg="transparent">
+					None
+				</button>
+			</div>
+		</div>
+	</div>
+	{{-- Row 3: AI Tools --}}
+	<div class="flex items-stretch gap-1 bg-gray-700 p-1 rounded">
+		@foreach(['Expand', 'Rephrase', 'Shorten'] as $action)
+			<div class="relative js-ai-dropdown-container flex-1">
+				<button type="button" class="js-ai-action-btn w-full">{{ $action }}</button>
+				<div class="js-ai-dropdown absolute bottom-full mb-1 w-full bg-gray-700 rounded p-2 hidden flex-col gap-2">
+					<select class="js-llm-model-select text-black text-xs rounded p-1">
+						<option value="{{ env('OPEN_ROUTER_MODEL', 'openai/gpt-4o-mini') }}">Default Model</option>
+						<option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+						<option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+						<option value="google/gemini-flash-1.5">Gemini 1.5 Flash</option>
+					</select>
+					<button class="js-ai-apply-btn bg-teal-500 hover:bg-teal-600 rounded text-xs py-1" data-action="{{ strtolower($action) }}">Apply</button>
+				</div>
+			</div>
+		@endforeach
 	</div>
 </div>
 

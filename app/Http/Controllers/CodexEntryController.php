@@ -2,20 +2,21 @@
 
 	namespace App\Http\Controllers;
 
+	use App\Http\Controllers\LlmController; // MODIFIED: Import LlmController.
 	use App\Models\CodexEntry;
 	use App\Models\Image;
-	use App\Models\Novel; // MODIFIED: Import Novel model.
+	use App\Models\Novel;
 	use App\Services\FalAiService;
 	use App\Services\ImageUploadService;
 	use Illuminate\Http\JsonResponse;
 	use Illuminate\Http\Request;
 	use Illuminate\Http\UploadedFile;
 	use Illuminate\Support\Facades\Auth;
-	use Illuminate\Support\Facades\DB; // MODIFIED: Import DB facade.
+	use Illuminate\Support\Facades\DB;
 	use Illuminate\Support\Facades\Log;
 	use Illuminate\Support\Facades\Storage;
 	use Illuminate\Support\Facades\Validator;
-	use Illuminate\Validation\Rule; // MODIFIED: Import Rule for validation.
+	use Illuminate\Validation\Rule;
 	use Illuminate\View\View;
 	use Throwable;
 
@@ -37,14 +38,14 @@
 				return response()->json(['message' => 'Unauthorized'], 403);
 			}
 
-			// MODIFIED: Eager load the image and any linked entries (and their images).
+			// Eager load the image and any linked entries (and their images).
 			$codexEntry->load('image', 'linkedEntries.image');
 
 			return view('novel-editor.partials.codex-entry-window', compact('codexEntry'));
 		}
 
 		/**
-		 * NEW: Store a newly created codex entry in storage.
+		 * Store a newly created codex entry in storage.
 		 *
 		 * @param Request $request
 		 * @param Novel $novel
@@ -149,6 +150,118 @@
 				Log::error('Failed to create codex entry for novel ID ' . $novel->id . ': ' . $e->getMessage());
 				return response()->json(['message' => 'Failed to create codex entry: ' . $e->getMessage()], 500);
 			}
+		}
+
+		/**
+		 * NEW: Update the specified codex entry in storage.
+		 *
+		 * @param Request $request
+		 * @param CodexEntry $codexEntry
+		 * @return JsonResponse
+		 */
+		public function update(Request $request, CodexEntry $codexEntry): JsonResponse
+		{
+			// Authorization check
+			if (Auth::id() !== $codexEntry->novel->user_id) {
+				return response()->json(['message' => 'Unauthorized'], 403);
+			}
+
+			$validator = Validator::make($request->all(), [
+				'title' => 'sometimes|required|string|max:255',
+				'description' => 'nullable|string|max:1000',
+				'content' => 'nullable|string',
+			]);
+
+			if ($validator->fails()) {
+				return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+			}
+
+			try {
+				$codexEntry->update($validator->validated());
+
+				return response()->json([
+					'success' => true,
+					'message' => 'Codex entry updated successfully.'
+				]);
+			} catch (Throwable $e) {
+				Log::error('Failed to update codex entry ID ' . $codexEntry->id . ': ' . $e->getMessage());
+				return response()->json(['message' => 'Failed to update codex entry: ' . $e->getMessage()], 500);
+			}
+		}
+
+		/**
+		 * NEW: Process a text selection using an LLM for actions like rephrasing.
+		 *
+		 * @param Request $request
+		 * @param CodexEntry $codexEntry
+		 * @param LlmController $llm
+		 * @return JsonResponse
+		 */
+		public function processText(Request $request, CodexEntry $codexEntry, LlmController $llm): JsonResponse
+		{
+			// Authorization check
+			if (Auth::id() !== $codexEntry->novel->user_id) {
+				return response()->json(['message' => 'Unauthorized'], 403);
+			}
+
+			$validator = Validator::make($request->all(), [
+				'text' => 'required|string',
+				'action' => ['required', Rule::in(['expand', 'rephrase', 'shorten'])],
+				'model' => 'required|string',
+			]);
+
+			if ($validator->fails()) {
+				return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+			}
+
+			try {
+				$validated = $validator->validated();
+				$prompt = $this->buildProcessTextPrompt($validated['text'], $validated['action']);
+
+				$response = $llm->callLlmSync(
+					prompt: $prompt,
+					modelId: $validated['model'],
+					callReason: 'Process Codex Text',
+					temperature: 0.7,
+					responseFormat: 'json_object'
+				);
+
+				if (isset($response['processed_text'])) {
+					return response()->json(['success' => true, 'text' => $response['processed_text']]);
+				}
+
+				throw new \Exception('Invalid response format from LLM.');
+			} catch (Throwable $e) {
+				Log::error('Failed to process text for codex entry ID ' . $codexEntry->id . ': ' . $e->getMessage());
+				return response()->json(['message' => 'Failed to process text: ' . $e->getMessage()], 500);
+			}
+		}
+
+		/**
+		 * NEW: Helper to build the prompt for text processing.
+		 * @param string $text
+		 * @param string $action
+		 * @return string
+		 */
+		private function buildProcessTextPrompt(string $text, string $action): string
+		{
+			$actionInstruction = match ($action) {
+				'expand' => 'Expand on the following text, adding more detail, description, and context. Make it about twice as long.',
+				'rephrase' => 'Rephrase the following text to make it clearer, more engaging, or to have a different tone, while preserving the core meaning.',
+				'shorten' => 'Shorten the following text, condensing it to its most essential points. Make it about half as long.',
+				default => 'Process the following text.',
+			};
+
+			return <<<PROMPT
+You are a writing assistant. Your task is to process a piece of text based on a specific instruction.
+
+**Instruction:** {$actionInstruction}
+
+**Original Text:**
+"{$text}"
+
+Please provide only the modified text as your response. The output must be a single, valid JSON object with one key: "processed_text". Do not include any explanations or surrounding text.
+PROMPT;
 		}
 
 		/**
@@ -293,7 +406,7 @@
 		}
 
 		/**
-		 * NEW: Attach a codex entry to another codex entry.
+		 * Attach a codex entry to another codex entry.
 		 *
 		 * @param CodexEntry $codexEntry
 		 * @param CodexEntry $linkedCodexEntry
@@ -329,7 +442,7 @@
 		}
 
 		/**
-		 * NEW: Detach a codex entry from another codex entry.
+		 * Detach a codex entry from another codex entry.
 		 *
 		 * @param CodexEntry $codexEntry
 		 * @param CodexEntry $linkedCodexEntry
