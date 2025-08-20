@@ -10,8 +10,9 @@ export function setupChapterEditor(desktop) {
 	desktop.addEventListener('dragstart', (event) => {
 		const draggable = event.target.closest('.js-draggable-codex');
 		if (draggable) {
-			// Store the codex entry's ID for the drop event
-			event.dataTransfer.setData('text/plain', draggable.dataset.entryId);
+			// MODIFIED: Use a custom data type to prevent conflicts with text selection drags.
+			event.dataTransfer.setData('application/x-codex-entry-id', draggable.dataset.entryId);
+			event.dataTransfer.setData('text/plain', draggable.dataset.entryId); // Fallback for compatibility
 			event.dataTransfer.effectAllowed = 'link';
 		}
 	});
@@ -50,7 +51,8 @@ export function setupChapterEditor(desktop) {
 		dropZone.classList.remove('bg-blue-100', 'dark:bg-blue-900/50');
 		
 		const chapterId = dropZone.dataset.chapterId;
-		const codexEntryId = event.dataTransfer.getData('text/plain');
+		// MODIFIED: Check for our custom data type first. This prevents drops from selected text.
+		const codexEntryId = event.dataTransfer.getData('application/x-codex-entry-id');
 		
 		if (!chapterId || !codexEntryId) return;
 		

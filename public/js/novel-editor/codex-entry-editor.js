@@ -248,10 +248,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		dropZone.classList.remove('bg-blue-100', 'dark:bg-blue-900/50');
 		
 		const parentEntryId = dropZone.dataset.entryId;
-		const linkedEntryId = event.dataTransfer.getData('text/plain');
+		// MODIFIED: Use custom data type to ensure we're dropping a codex entry, not selected text.
+		const linkedEntryId = event.dataTransfer.getData('application/x-codex-entry-id');
 		
 		if (!parentEntryId || !linkedEntryId || parentEntryId === linkedEntryId) {
-			return; // Don't drop on self
+			return; // Don't drop on self or if data is invalid
 		}
 		
 		// Prevent dropping the same entry if it's already there

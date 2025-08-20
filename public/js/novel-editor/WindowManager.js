@@ -29,6 +29,9 @@ export default class WindowManager {
 		this.isPanning = false;
 		this.panStartX = 0;
 		this.panStartY = 0;
+		
+		// NEW: Bind the keydown handler to the class instance.
+		this.handleKeyDown = this.handleKeyDown.bind(this);
 	}
 	
 	/**
@@ -144,6 +147,9 @@ export default class WindowManager {
 		win.addEventListener('mousedown', (e) => this.focus(windowId, e), true);
 		
 		this.focus(windowId);
+		
+		// NEW: Update taskbar after creating a window to show its icon.
+		this.updateTaskbar();
 		
 		return windowId;
 	}
@@ -282,6 +288,8 @@ export default class WindowManager {
 		}
 		
 		this.scrollIntoView(windowId);
+		// NEW: Update taskbar to reflect the newly focused window.
+		this.updateTaskbar();
 		this.saveState();
 	}
 	
@@ -291,7 +299,6 @@ export default class WindowManager {
 	close(windowId) {
 		const win = this.windows.get(windowId);
 		if (win) {
-			const wasMinimized = win.isMinimized;
 			win.element.remove();
 			this.windows.delete(windowId);
 			this.selectedWindows.delete(windowId); // NEW: Remove from selection on close.
@@ -305,9 +312,8 @@ export default class WindowManager {
 				if (uploadModal) uploadModal.remove();
 			}
 			
-			if (wasMinimized) {
-				this.updateTaskbar();
-			}
+			// NEW: Update taskbar after closing a window.
+			this.updateTaskbar();
 			this.saveState();
 		}
 	}
@@ -335,6 +341,11 @@ export default class WindowManager {
 		win.element.classList.remove('selected');
 		this.selectedWindows.delete(windowId);
 		
+		// NEW: If the minimized window was the active one, clear the active window state.
+		if (this.activeWindow === windowId) {
+			this.activeWindow = null;
+		}
+		
 		this.updateTaskbar();
 		this.saveState();
 	}
@@ -348,9 +359,9 @@ export default class WindowManager {
 		
 		win.isMinimized = false;
 		win.element.classList.remove('hidden');
-		this.focus(windowId); // focus() now handles bringing it into view.
+		this.focus(windowId); // focus() now handles bringing it into view and updating the taskbar.
 		
-		this.updateTaskbar();
+		// this.updateTaskbar(); // No longer needed here, focus() handles it.
 		this.saveState();
 	}
 	
@@ -707,17 +718,31 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * Redraws the entire taskbar area for minimized windows.
+	 * MODIFIED: Redraws the taskbar, showing persistent icons for key windows
+	 * and all minimized windows. Highlights the active window's icon.
 	 */
 	updateTaskbar() {
-		const minimized = [];
+		this.minimizedContainer.innerHTML = '';
+		const taskbarItems = new Map();
+		
+		// First, add all minimized windows to the map.
 		this.windows.forEach((win, id) => {
 			if (win.isMinimized) {
-				minimized.push({ id, title: win.title, icon: win.icon });
+				taskbarItems.set(id, { id, title: win.title, icon: win.icon });
 			}
 		});
 		
-		minimized.sort((a, b) => {
+		// NEW: Ensure Outline and Codex windows are always shown if they exist,
+		// even if they are not minimized.
+		['outline-window', 'codex-window'].forEach(id => {
+			if (this.windows.has(id) && !taskbarItems.has(id)) {
+				const win = this.windows.get(id);
+				taskbarItems.set(id, { id, title: win.title, icon: win.icon });
+			}
+		});
+		
+		// Create a sorted array from the map for consistent ordering.
+		const sortedItems = Array.from(taskbarItems.values()).sort((a, b) => {
 			const order = this.minimizedOrder;
 			const indexA = order.indexOf(a.id);
 			const indexB = order.indexOf(b.id);
@@ -728,14 +753,36 @@ export default class WindowManager {
 			return a.title.localeCompare(b.title);
 		});
 		
-		this.minimizedContainer.innerHTML = '';
-		
-		minimized.forEach(item => {
+		// Render the buttons.
+		sortedItems.forEach(item => {
+			const win = this.windows.get(item.id);
 			const taskbarItem = document.createElement('button');
-			taskbarItem.className = 'window-minimized bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded px-3 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 transition-colors flex items-center gap-2 flex-shrink min-w-[120px] max-w-[256px] flex-grow basis-0';
+			
+			// Base classes
+			taskbarItem.className = 'window-minimized hover:bg-gray-300 dark:hover:bg-gray-600 rounded px-3 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 transition-colors flex items-center gap-2 flex-shrink min-w-[120px] max-w-[256px] flex-grow basis-0';
+			
+			// Add classes based on window state
+			if (!win.isMinimized && item.id === this.activeWindow) {
+				// Active and open window
+				taskbarItem.classList.add('bg-indigo-200', 'dark:bg-indigo-800', 'ring-2', 'ring-indigo-400');
+			} else if (!win.isMinimized) {
+				// Open but not active window
+				taskbarItem.classList.add('bg-white', 'dark:bg-gray-700/50');
+			} else {
+				// Minimized window
+				taskbarItem.classList.add('bg-gray-200', 'dark:bg-gray-700');
+			}
+			
 			taskbarItem.innerHTML = `<div class="w-5 h-5 flex-shrink-0">${item.icon || ''}</div><span class="truncate">${item.title}</span>`;
 			taskbarItem.dataset.windowId = item.id;
-			taskbarItem.addEventListener('click', () => this.restore(item.id));
+			
+			taskbarItem.addEventListener('click', () => {
+				if (win.isMinimized) {
+					this.restore(item.id);
+				} else {
+					this.focus(item.id);
+				}
+			});
 			this.minimizedContainer.appendChild(taskbarItem);
 		});
 	}
@@ -793,6 +840,8 @@ export default class WindowManager {
 		this.viewport.addEventListener('mousemove', this.handlePanMove.bind(this));
 		this.viewport.addEventListener('mouseup', this.handlePanEnd.bind(this));
 		this.viewport.addEventListener('mouseleave', this.handlePanEnd.bind(this)); // Stop panning if mouse leaves viewport
+		// NEW: Add keyboard shortcut listener.
+		document.addEventListener('keydown', this.handleKeyDown);
 	}
 	
 	/**
@@ -1000,5 +1049,22 @@ export default class WindowManager {
 		win.originalRect = { x, y, width, height };
 		
 		this.focus(windowId);
+	}
+	
+	/**
+	 * NEW: Handles keyboard shortcuts for the editor.
+	 * @param {KeyboardEvent} event
+	 */
+	handleKeyDown(event) {
+		// Minimize with Ctrl+M or Cmd+M
+		if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'm') {
+			if (this.activeWindow) {
+				event.preventDefault();
+				const win = this.windows.get(this.activeWindow);
+				if (win && !win.isMinimized) {
+					this.minimize(this.activeWindow);
+				}
+			}
+		}
 	}
 }
