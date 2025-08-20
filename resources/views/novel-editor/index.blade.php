@@ -30,19 +30,86 @@
 	<link href="{{ asset('theme/assets/libs/bootstrap-icons/font/bootstrap-icons.min.css') }}" rel="stylesheet" />
 	<link rel="stylesheet" href="{{ asset('theme/assets/fonts/css/boxicons.min.css') }}" />
 	
+	{{-- MODIFIED: Added new toolbar script --}}
 	<script type="module" src="{{ asset('/js/novel-editor/main.js') }}"></script>
+	<script type="module" src="{{ asset('/js/novel-editor/toolbar.js') }}"></script>
 	<script src="{{ asset('/js/novel-editor/codex-entry-editor.js') }}"></script>
 	
 	@vite(['resources/css/editor.css'])
 
 </head>
-<body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden select-none"
+{{-- MODIFIED: Body is now a flex column to stack the toolbar, viewport, and taskbar. --}}
+<body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden select-none flex flex-col"
       data-novel-id="{{ $novel->id }}"
       data-editor-state="{{ json_encode($novel->editor_state) }}">
 
-{{-- The main container is now a "viewport" which clips the oversized desktop.
-     It has overflow-hidden to act as the camera frame for the canvas. --}}
-<div id="viewport" class="relative w-full h-full z-10 overflow-hidden">
+{{-- NEW: Top toolbar, always visible. --}}
+<div id="top-toolbar" class="flex-shrink-0 h-12 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center px-4 gap-4 z-50 border-b border-gray-200 dark:border-gray-700">
+	{{-- History Section --}}
+	<div class="flex items-center gap-1">
+		<button type="button" class="js-toolbar-btn" data-command="undo" title="Undo" disabled>
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/></svg>
+		</button>
+		<button type="button" class="js-toolbar-btn" data-command="redo" title="Redo" disabled>
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+		</button>
+	</div>
+	<div class="w-px h-6 bg-gray-300 dark:bg-gray-600"></div> {{-- Divider --}}
+	{{-- Formatting Section --}}
+	<div class="flex items-center gap-1">
+		<button type="button" class="js-toolbar-btn font-bold" data-command="bold" title="Bold" disabled>B</button>
+		<button type="button" class="js-toolbar-btn italic" data-command="italic" title="Italic" disabled>I</button>
+		<button type="button" class="js-toolbar-btn underline" data-command="underline" title="Underline" disabled>U</button>
+		<div class="relative js-dropdown-container">
+			<button type="button" class="js-toolbar-btn" title="Highlight" disabled>
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.823 2.215a.5.5 0 0 0-.693-.693l-1.359.235-2.533-2.533a.5.5 0 0 0-.707 0L8.294 1.453a.5.5 0 0 0 0 .707l2.533 2.533-.235 1.359a.5.5 0 0 0 .693.693l1.55-1.55 2.43 2.43a.5.5 0 0 0 .707 0l2.235-2.235a.5.5 0 0 0 0-.707L15.823 2.215zm-1.06 1.06-2.43-2.43 2.235-2.235 2.43 2.43-2.235 2.235z"/><path d="M1.25 9.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25zM1.25 12.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25zM1.25 15.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25z"/></svg>
+			</button>
+			<div class="js-dropdown absolute top-full mt-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded p-1 hidden flex-col gap-1 w-32 shadow-lg">
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-yellow">
+					<span class="w-4 h-4 rounded-full" style="background-color: #fef08a;"></span> Yellow
+				</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-green">
+					<span class="w-4 h-4 rounded-full" style="background-color: #a7f3d0;"></span> Green
+				</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-blue">
+					<span class="w-4 h-4 rounded-full" style="background-color: #bfdbfe;"></span> Blue
+				</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-red">
+					<span class="w-4 h-4 rounded-full" style="background-color: #fecaca;"></span> Red
+				</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="transparent">
+					None
+				</button>
+			</div>
+		</div>
+	</div>
+	<div class="w-px h-6 bg-gray-300 dark:bg-gray-600"></div> {{-- Divider --}}
+	{{-- AI Tools Section --}}
+	<div class="flex items-center gap-1">
+		@foreach(['Expand', 'Rephrase', 'Shorten'] as $action)
+			<div class="relative js-dropdown-container">
+				<button type="button" class="js-toolbar-btn js-ai-action-btn text-sm px-3" disabled>{{ $action }}</button>
+				<div class="js-dropdown absolute top-full mt-2 w-48 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded p-2 hidden flex-col gap-2 shadow-lg">
+					<select class="js-llm-model-select text-black dark:text-white dark:bg-gray-700 text-xs rounded p-1 w-full">
+						<option value="{{ env('OPEN_ROUTER_MODEL', 'openai/gpt-4o-mini') }}">Default Model</option>
+						<option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+						<option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+						<option value="google/gemini-flash-1.5">Gemini 1.5 Flash</option>
+					</select>
+					<button class="js-ai-apply-btn bg-teal-500 hover:bg-teal-600 text-white rounded text-xs py-1.5 w-full" data-action="{{ strtolower($action) }}">Apply</button>
+				</div>
+			</div>
+		@endforeach
+	</div>
+	<div class="flex-grow"></div> {{-- Spacer --}}
+	{{-- Word Count Section --}}
+	<div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+		<span id="js-word-count">No text selected</span>
+	</div>
+</div>
+
+{{-- MODIFIED: Viewport is now a flex-grow element to fill space between toolbars. --}}
+<div id="viewport" class="relative flex-grow z-10 overflow-hidden">
 	{{-- The "desktop" is now a huge, absolutely positioned canvas inside the viewport.
 	     Its position and scale will be manipulated by JavaScript for panning and zooming. --}}
 	<div id="desktop" class="absolute" style="width: 5000px; height: 5000px; transform-origin: 0 0;">
@@ -50,7 +117,8 @@
 	</div>
 </div>
 
-<div id="taskbar" class="absolute bottom-0 left-0 w-full h-12 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center px-2 gap-2 z-50 border-t border-gray-200 dark:border-gray-700">
+{{-- MODIFIED: Taskbar is now a flex-shrink element, no longer absolutely positioned. --}}
+<div id="taskbar" class="flex-shrink-0 h-12 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center px-2 gap-2 z-50 border-t border-gray-200 dark:border-gray-700">
 	
 	{{-- "Open Windows" menu button and popup. --}}
 	<div class="relative">
@@ -171,67 +239,6 @@
 				</button>
 			</div>
 		</form>
-	</div>
-</div>
-
-{{-- NEW: Floating toolbar for contenteditable areas. It's a single global instance. --}}
-<div id="codex-floating-toolbar" class="js-codex-toolbar fixed z-[9999] bg-gray-800 text-white rounded-lg shadow-lg p-1 flex flex-col gap-1 hidden" style="width: 300px;">
-	{{-- Row 1: Word Count & History --}}
-	<div class="flex items-center justify-between text-xs px-2 py-0.5">
-		<span class="js-word-count">0 words selected</span>
-		<div class="flex items-center gap-2">
-			<button type="button" class="js-codex-edit-btn" data-command="undo" title="Undo">
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/></svg>
-			</button>
-			<button type="button" class="js-codex-edit-btn" data-command="redo" title="Redo">
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
-			</button>
-		</div>
-	</div>
-	{{-- Row 2: Formatting --}}
-	<div class="flex items-center gap-1 bg-gray-700 p-1 rounded">
-		<button type="button" class="js-codex-edit-btn" data-command="bold" title="Bold">B</button>
-		<button type="button" class="js-codex-edit-btn" data-command="italic" title="Italic">I</button>
-		<button type="button" class="js-codex-edit-btn" data-command="underline" title="Underline">U</button>
-		<div class="relative js-highlight-dropdown-container">
-			<button type="button" class="js-codex-edit-btn" title="Highlight">
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.823 2.215a.5.5 0 0 0-.693-.693l-1.359.235-2.533-2.533a.5.5 0 0 0-.707 0L8.294 1.453a.5.5 0 0 0 0 .707l2.533 2.533-.235 1.359a.5.5 0 0 0 .693.693l1.55-1.55 2.43 2.43a.5.5 0 0 0 .707 0l2.235-2.235a.5.5 0 0 0 0-.707L15.823 2.215zm-1.06 1.06-2.43-2.43 2.235-2.235 2.43 2.43-2.235 2.235z"/><path d="M1.25 9.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25zM1.25 12.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25zM1.25 15.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25z"/></svg>
-			</button>
-			<div class="js-highlight-dropdown absolute bottom-full mb-1 bg-gray-700 rounded p-1 hidden flex-col gap-1 w-32">
-				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs" data-bg="highlight-yellow">
-					<span class="w-4 h-4 rounded-full" style="background-color: #fef08a;"></span> Yellow
-				</button>
-				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs" data-bg="highlight-green">
-					<span class="w-4 h-4 rounded-full" style="background-color: #a7f3d0;"></span> Green
-				</button>
-				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs" data-bg="highlight-blue">
-					<span class="w-4 h-4 rounded-full" style="background-color: #bfdbfe;"></span> Blue
-				</button>
-				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs" data-bg="highlight-red">
-					<span class="w-4 h-4 rounded-full" style="background-color: #fecaca;"></span> Red
-				</button>
-				<button class="js-highlight-option p-1 rounded w-full text-left text-xs" data-bg="transparent">
-					None
-				</button>
-			</div>
-		</div>
-	</div>
-	{{-- Row 3: AI Tools --}}
-	<div class="flex items-stretch gap-1 bg-gray-700 p-1 rounded">
-		@foreach(['Expand', 'Rephrase', 'Shorten'] as $action)
-			<div class="relative js-ai-dropdown-container flex-1">
-				<button type="button" class="js-ai-action-btn w-full">{{ $action }}</button>
-				<div class="js-ai-dropdown absolute bottom-full mb-1 w-full bg-gray-700 rounded p-2 hidden flex-col gap-2">
-					<select class="js-llm-model-select text-black text-xs rounded p-1">
-						<option value="{{ env('OPEN_ROUTER_MODEL', 'openai/gpt-4o-mini') }}">Default Model</option>
-						<option value="openai/gpt-4o-mini">GPT-4o Mini</option>
-						<option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-						<option value="google/gemini-flash-1.5">Gemini 1.5 Flash</option>
-					</select>
-					<button class="js-ai-apply-btn bg-teal-500 hover:bg-teal-600 rounded text-xs py-1" data-action="{{ strtolower($action) }}">Apply</button>
-				</div>
-			</div>
-		@endforeach
 	</div>
 </div>
 

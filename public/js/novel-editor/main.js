@@ -1,7 +1,8 @@
 import WindowManager from './WindowManager.js';
 import { setupCodexEntryHandler, setupChapterHandler, setupThemeToggle, setupOpenWindowsMenu, setupCanvasControls } from './eventHandlers.js';
 import { setupChapterEditor } from './chapter-editor.js';
-import { setupCodexContentEditor } from './codex-content-editor.js'; // NEW: Import codex content editor.
+import { setupCodexContentEditor } from './codex-content-editor.js';
+import { setupTopToolbar } from './toolbar.js'; // NEW: Import the new toolbar setup function.
 
 /**
  * Initializes the novel editor's multi-window desktop environment.
@@ -26,10 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
 	windowManager.loadState();
 	
 	// Initialize event handlers for various UI interactions.
+	setupTopToolbar(); // NEW: Call the top toolbar setup.
 	setupCodexEntryHandler(desktop, windowManager);
 	setupChapterHandler(desktop, windowManager);
 	setupChapterEditor(desktop);
-	setupCodexContentEditor(desktop); // NEW: Call the codex content editor setup.
+	setupCodexContentEditor(desktop);
 	setupThemeToggle();
 	setupOpenWindowsMenu(windowManager);
 	setupCanvasControls(windowManager);

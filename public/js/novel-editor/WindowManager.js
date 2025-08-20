@@ -109,6 +109,12 @@ export default class WindowManager {
 		contentArea.className = 'flex-grow overflow-auto p-1';
 		contentArea.innerHTML = content;
 		
+		contentArea.addEventListener('dblclick', () => {
+			this.scale = 1;
+			this.scrollIntoView(windowId);
+		});
+		
+		
 		// NEW: Find modals within the content, move them to the body so they are not affected by canvas transform.
 		const modals = contentArea.querySelectorAll('.js-ai-modal, .js-upload-modal');
 		modals.forEach(modal => {
@@ -184,7 +190,7 @@ export default class WindowManager {
 		if (!win || win.isMinimized) return;
 		
 		const el = win.element;
-		const padding = 50; // 50px padding from the viewport edges
+		const padding = 150; // 50px padding from the viewport edges
 		
 		// Get window's position and size in the desktop's coordinate system
 		const winLeft = el.offsetLeft;
