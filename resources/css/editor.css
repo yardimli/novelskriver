@@ -58,6 +58,14 @@
     cursor: grabbing;
 }
 
+/* NEW: Set default cursor for windows to pointer, and text cursor for editable fields. */
+.window-element {
+    cursor: pointer;
+}
+.window-element [contenteditable="true"] {
+    cursor: text;
+}
+
 /* NEW: Styles for contenteditable placeholders */
 [contenteditable][data-placeholder]:empty:before {
     content: attr(data-placeholder);

@@ -45,7 +45,8 @@ export default class WindowManager {
 		
 		const win = document.createElement('div');
 		win.id = windowId;
-		win.className = 'absolute flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-300 dark:border-gray-700 overflow-hidden transition-all duration-100 ease-in-out';
+		// MODIFIED: Added a common class for all windows for styling purposes.
+		win.className = 'window-element absolute flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-300 dark:border-gray-700 overflow-hidden transition-all duration-100 ease-in-out';
 		win.style.width = `${width}px`;
 		win.style.height = `${height}px`;
 		win.style.minWidth = '300px';
