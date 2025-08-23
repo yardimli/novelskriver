@@ -10,7 +10,6 @@ import { schema as basicSchema } from 'prosemirror-schema-basic';
 import { addListNodes } from 'prosemirror-schema-list';
 import { history, undo, redo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
-// MODIFIED: Import toggleMark to rebuild keybindings, and baseKeymap for the rest.
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { updateToolbarState } from './toolbar.js';
 
@@ -27,11 +26,22 @@ const highlightMarkSpec = (colorClass) => ({
 	toDOM: () => ['span', { class: colorClass }, 0],
 });
 
+// Use the .update() method on the OrderedMap to avoid converting it to a plain object.
+// This fixes the "nodes.append is not a function" error.
+const nodes = basicSchema.spec.nodes.update('blockquote', {
+	content: 'paragraph+', // Only allow paragraphs inside a blockquote to prevent nesting.
+	group: 'block',
+	defining: true,
+	parseDOM: [{ tag: 'blockquote' }],
+	toDOM() { return ['blockquote', 0]; },
+});
+
 // The main schema for the 'content' field, with added marks for underline and highlights.
 export const schema = new Schema({
-	nodes: addListNodes(basicSchema.spec.nodes, 'paragraph block*', 'block'),
+	// Use the overridden nodes and only allow paragraphs inside list items to prevent nesting.
+	nodes: addListNodes(nodes, 'paragraph+', 'block'),
 	marks: {
-		// MODIFIED: Replaced `...basicSchema.spec.marks` with explicit definitions.
+		// Replaced `...basicSchema.spec.marks` with explicit definitions.
 		// This resolves an issue where `strong` and `em` marks were not being
 		// correctly added to the schema, causing errors in the toolbar.
 		
@@ -208,7 +218,7 @@ function initEditorsForWindow(windowContent) {
 		// Parse the initial content from the hidden div.
 		const doc = DOMParser.fromSchema(currentSchema).parse(initialContentEl);
 		
-		// MODIFIED: Rebuild the base keymap to use marks from our custom schema.
+		// Rebuild the base keymap to use marks from our custom schema.
 		// This is crucial because the default baseKeymap is bound to the original
 		// basicSchema instance, and our new schema has different mark instances.
 		const customKeymap = {
@@ -260,7 +270,7 @@ function initEditorsForWindow(windowContent) {
 				}
 				// If selection or content changed, update the toolbar state.
 				if ((transaction.selectionSet || transaction.docChanged)) {
-					// MODIFIED: No need to check hasFocus() here, as the blur event handles deactivation.
+					// No need to check hasFocus() here, as the blur event handles deactivation.
 					// This ensures the toolbar updates correctly even after a command is dispatched.
 					updateToolbarState(view);
 				}

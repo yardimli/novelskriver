@@ -217,10 +217,10 @@ export default class WindowManager {
 			deltaY = (viewportHeight - padding) - viewBottom;
 		}
 		
-		// NEW: Define a tolerance to prevent jitter from floating point inaccuracies.
+		// Define a tolerance to prevent jitter from floating point inaccuracies.
 		const tolerance = 15;
 		
-		// MODIFIED: Only pan if the adjustment is larger than the tolerance.
+		// Only pan if the adjustment is larger than the tolerance.
 		// This stops the function from making tiny, unnecessary adjustments when the window is already visible.
 		if (Math.abs(deltaX) > tolerance || Math.abs(deltaY) > tolerance) {
 			this.panX += deltaX;

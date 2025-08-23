@@ -3,14 +3,32 @@
  * Handles formatting, highlighting, AI actions, and selection state.
  */
 
-// MODIFIED: Removed schema import to break circular dependency.
-import { toggleMark, setBlockType, wrapIn } from 'prosemirror-commands';
+// Import `lift` for toggling blockquotes.
+import { toggleMark, setBlockType, wrapIn, lift } from 'prosemirror-commands';
 import { history, undo, redo } from 'prosemirror-history';
-import { wrapInList } from 'prosemirror-schema-list';
+// Import `liftListItem` for toggling lists.
+import { wrapInList, liftListItem } from 'prosemirror-schema-list';
 
 let activeEditorView = null;
 const toolbar = document.getElementById('top-toolbar');
 const wordCountEl = document.getElementById('js-word-count');
+
+/**
+ * NEW: Helper to check if the selection is inside a node of a certain type.
+ * This is used to determine the "active" state of toolbar buttons like blockquote and lists.
+ * @param {import('prosemirror-state').EditorState} state The editor state.
+ * @param {import('prosemirror-model').NodeType} type The node type to check for.
+ * @returns {boolean}
+ */
+function isNodeActive(state, type) {
+	const { $from } = state.selection;
+	for (let i = $from.depth; i > 0; i--) {
+		if ($from.node(i).type === type) {
+			return true;
+		}
+	}
+	return false;
+}
 
 /**
  * Updates the toolbar's state based on the active editor's state.
@@ -34,7 +52,7 @@ export function updateToolbarState(view) {
 	
 	if (view && view.state) {
 		const { state } = view;
-		const { schema } = state; // MODIFIED: Get schema from the active editor's state.
+		const { schema } = state; // Get schema from the active editor's state.
 		const { from, to, empty, $from } = state.selection;
 		
 		const isTextSelected = !empty;
@@ -52,9 +70,18 @@ export function updateToolbarState(view) {
 				case 'italic': markType = schema.marks.em; commandFn = toggleMark(markType); break;
 				case 'underline': markType = schema.marks.underline; commandFn = toggleMark(markType); break;
 				case 'strike': markType = schema.marks.strike; commandFn = toggleMark(markType); break;
-				case 'blockquote': commandFn = wrapIn(schema.nodes.blockquote); break;
-				case 'bullet_list': commandFn = wrapInList(schema.nodes.bullet_list); break;
-				case 'ordered_list': commandFn = wrapInList(schema.nodes.ordered_list); break;
+				case 'blockquote':
+					commandFn = isNodeActive(state, schema.nodes.blockquote) ? lift : wrapIn(schema.nodes.blockquote);
+					btn.classList.toggle('active', isNodeActive(state, schema.nodes.blockquote));
+					break;
+				case 'bullet_list':
+					commandFn = isNodeActive(state, schema.nodes.bullet_list) ? liftListItem(schema.nodes.list_item) : wrapInList(schema.nodes.bullet_list);
+					btn.classList.toggle('active', isNodeActive(state, schema.nodes.bullet_list));
+					break;
+				case 'ordered_list':
+					commandFn = isNodeActive(state, schema.nodes.ordered_list) ? liftListItem(schema.nodes.list_item) : wrapInList(schema.nodes.ordered_list);
+					btn.classList.toggle('active', isNodeActive(state, schema.nodes.ordered_list));
+					break;
 				case 'horizontal_rule':
 					// Special case, enabled if selection exists to replace it.
 					// This command can run even with an empty selection.
@@ -104,7 +131,7 @@ export function updateToolbarState(view) {
 		
 	} else {
 		// No active editor, so disable all buttons and reset word count.
-		allBtns.forEach(btn => { btn.disabled = true; });
+		allBtns.forEach(btn => { btn.disabled = true; btn.classList.remove('active'); });
 		const headingBtn = toolbar.querySelector('.js-heading-btn');
 		if (headingBtn) headingBtn.textContent = 'Paragraph';
 		wordCountEl.textContent = 'No text selected';
@@ -120,8 +147,7 @@ function applyCommand(command, attrs = {}) {
 	if (!activeEditorView) return;
 	
 	const { state, dispatch } = activeEditorView;
-	const { schema } = state; // MODIFIED: Get schema from the active editor's state.
-	console.log(schema);
+	const { schema } = state; // Get schema from the active editor's state.
 	let cmd;
 	
 	switch (command) {
@@ -129,9 +155,15 @@ function applyCommand(command, attrs = {}) {
 		case 'italic': cmd = toggleMark(schema.marks.em); break;
 		case 'underline': cmd = toggleMark(schema.marks.underline); break;
 		case 'strike': cmd = toggleMark(schema.marks.strike); break;
-		case 'blockquote': cmd = wrapIn(schema.nodes.blockquote); break;
-		case 'bullet_list': cmd = wrapInList(schema.nodes.bullet_list); break;
-		case 'ordered_list': cmd = wrapInList(schema.nodes.ordered_list); break;
+		case 'blockquote':
+			cmd = isNodeActive(state, schema.nodes.blockquote) ? lift : wrapIn(schema.nodes.blockquote);
+			break;
+		case 'bullet_list':
+			cmd = isNodeActive(state, schema.nodes.bullet_list) ? liftListItem(schema.nodes.list_item) : wrapInList(schema.nodes.bullet_list);
+			break;
+		case 'ordered_list':
+			cmd = isNodeActive(state, schema.nodes.ordered_list) ? liftListItem(schema.nodes.list_item) : wrapInList(schema.nodes.ordered_list);
+			break;
 		case 'horizontal_rule':
 			dispatch(state.tr.replaceSelectionWith(schema.nodes.horizontal_rule.create()));
 			break;
@@ -155,8 +187,8 @@ function applyCommand(command, attrs = {}) {
 function applyHighlight(color) {
 	if (!activeEditorView) return;
 	
-	const { state } = activeEditorView; // MODIFIED: Get state once.
-	const { schema } = state; // MODIFIED: Get schema from the active editor's state.
+	const { state } = activeEditorView;
+	const { schema } = state;
 	const { from, to } = state.selection;
 	let tr = state.tr;
 	
@@ -191,7 +223,7 @@ async function handleAiAction(button) {
 	const model = modelSelect.value;
 	
 	const { state } = activeEditorView;
-	const { schema } = state; // MODIFIED: Get schema from the active editor's state.
+	const { schema } = state;
 	const { from, to } = state.selection;
 	const text = state.doc.textBetween(from, to, ' ');
 	
