@@ -48,8 +48,7 @@
 				'X-Title' => config('app.name'),
 			])->get($this->apiBaseUrl . '/models');
 
-			$response->throw(); // Throw an exception if the request failed
-
+			$response->throw();
 			return $response->json();
 		}
 
@@ -90,7 +89,7 @@
 						'HTTP-Referer' => config('app.url'),
 						'X-Title' => config('app.name'),
 					])
-					->timeout(180) // 3-minute timeout for long generations
+					->timeout(180)
 					->post($this->apiBaseUrl . '/chat/completions', $requestBody);
 
 				Log::info('LLM API response body: ' . $response->body());
@@ -118,7 +117,6 @@
 
 			} catch (Throwable $e) {
 				$this->logLlmInteraction($prompt, $e->getMessage(), true);
-				// Re-throw the exception to be handled by the calling method
 				throw new \Exception('LLM API request failed: ' . $e->getMessage(), $e->getCode(), $e);
 			}
 		}

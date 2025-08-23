@@ -51,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	};
 	
 	// --- Event Delegation for Modal Triggers and Closers ---
-	// MODIFIED: Use document.body for event delegation for modals, as they are moved outside the #desktop element.
 	document.body.addEventListener('click', (event) => {
 		const target = event.target;
 		
@@ -89,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	
 	// --- AI Generation Form Submission ---
-	// MODIFIED: Use document.body for event delegation.
 	document.body.addEventListener('submit', async (event) => {
 		if (!event.target.matches('.js-ai-form')) return;
 		event.preventDefault();
@@ -138,7 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	
 	// --- Manual Upload Form Submission ---
-	// MODIFIED: Use document.body for event delegation.
 	document.body.addEventListener('submit', async (event) => {
 		if (!event.target.matches('.js-upload-form')) return;
 		event.preventDefault();
@@ -184,7 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	
 	// --- File Input Change for Preview in Upload Modal ---
-	// MODIFIED: Use document.body for event delegation.
 	document.body.addEventListener('change', (event) => {
 		if (!event.target.matches('input[type="file"][name="image"]')) return;
 		
@@ -212,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 	
-	// --- NEW: Drag and Drop for linking Codex Entries to other Codex Entries ---
+	// --- Drag and Drop for linking Codex Entries to other Codex Entries ---
 	
 	// 1. Handle dragging over the codex entry window
 	desktop.addEventListener('dragover', (event) => {
@@ -248,7 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		dropZone.classList.remove('bg-blue-100', 'dark:bg-blue-900/50');
 		
 		const parentEntryId = dropZone.dataset.entryId;
-		// MODIFIED: Use custom data type to ensure we're dropping a codex entry, not selected text.
 		const linkedEntryId = event.dataTransfer.getData('application/x-codex-entry-id');
 		
 		if (!parentEntryId || !linkedEntryId || parentEntryId === linkedEntryId) {
@@ -288,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 	
-	// --- NEW: Unlinking Codex Entries via click on 'x' button ---
+	// --- Unlinking Codex Entries via click on 'x' button ---
 	desktop.addEventListener('click', async (event) => {
 		const removeBtn = event.target.closest('.js-remove-codex-codex-link');
 		if (!removeBtn) return;
@@ -330,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	
 	/**
-	 * NEW: Helper function to create the HTML for a new codex link tag.
+	 * Helper function to create the HTML for a new codex link tag.
 	 * @param {string} parentEntryId
 	 * @param {object} codexEntry
 	 * @returns {HTMLElement}
@@ -361,14 +356,13 @@ document.addEventListener('DOMContentLoaded', () => {
 		return div;
 	}
 	
-	// --- NEW: Create New Codex Entry ---
+	// --- Create New Codex Entry ---
 	
 	const newCodexModal = document.getElementById('new-codex-entry-modal');
 	const newCodexForm = document.getElementById('new-codex-entry-form');
 	const novelId = document.body.dataset.novelId;
 	
 	// 1. Open Modal
-	// MODIFIED: The button is now in the window title bar, so the listener must be on the body or desktop.
 	document.body.addEventListener('click', (event) => {
 		if (event.target.closest('.js-open-new-codex-modal')) {
 			if (newCodexModal) {
@@ -380,14 +374,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	// 2. Close Modal
 	if (newCodexModal) {
 		newCodexModal.addEventListener('click', (event) => {
-			// MODIFIED: Removed `|| event.target === newCodexModal` to prevent closing on outside click.
 			if (event.target.closest('.js-close-new-codex-modal')) {
 				resetAndCloseNewCodexModal();
 			}
 		});
 	}
 	
-	// NEW: Close modal on Escape key press.
 	document.addEventListener('keydown', (event) => {
 		if (event.key === 'Escape' && newCodexModal && !newCodexModal.classList.contains('hidden')) {
 			resetAndCloseNewCodexModal();

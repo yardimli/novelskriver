@@ -16,7 +16,6 @@
 						<div>
 							<h1 class="mb-0 h3">Hey, {{ Auth::user()->name }}! Welcome to Novelskriver.</h1>
 						</div>
-						{{-- MODIFIED: Changed the static "Start a New Project" card into a button here --}}
 						<a href="{{ route('novels.create') }}" class="btn btn-dark">
 							<i class="bi bi-plus-circle me-1"></i> Create New
 						</a>
@@ -61,8 +60,6 @@
 						</div>
 					</div>
 					
-					{{-- MODIFIED: Removed the static "Continue Your Work" section as the loops below handle it dynamically. --}}
-					
 					@if ($novelsWithoutSeries->isEmpty() && $seriesWithNovels->isEmpty())
 						<div class="text-center p-5 border rounded bg-white">
 							<h4>You haven't started any novels yet.</h4>
@@ -78,7 +75,6 @@
 							
 							<div class="row g-4 mb-5">
 								@foreach ($novelsWithoutSeries as $novel)
-									{{-- MODIFIED: Card now includes the AI Fill button --}}
 									<div class="col-lg-4 col-md-6">
 										<div class="card border-0 shadow-sm h-100 d-flex flex-column">
 											<div class="card-body d-flex flex-column">
@@ -98,7 +94,6 @@
 															<i class="bi bi-magic me-2"></i>Fill with AI
 														</button>
 													@else
-														{{-- MODIFIED: Changed from a disabled button to an active link pointing to the new editor route. --}}
 														<a href="{{ route('novels.edit', $novel) }}" class="btn btn-outline-secondary w-100">
 															<i class="bi bi-pencil-square me-2"></i>Edit Novel
 														</a>
@@ -119,7 +114,6 @@
 							
 							<div class="row g-4 mb-5">
 								@foreach ($group['novels'] as $novel)
-									{{-- MODIFIED: Card now includes the AI Fill button --}}
 									<div class="col-lg-4 col-md-6">
 										<div class="card border-0 shadow-sm h-100 d-flex flex-column">
 											<div class="card-body d-flex flex-column">
@@ -139,7 +133,6 @@
 															<i class="bi bi-magic me-2"></i>Fill with AI
 														</button>
 													@else
-														{{-- MODIFIED: Changed from a disabled button to an active link pointing to the new editor route. --}}
 														<a href="{{ route('novels.edit', $novel) }}" class="btn btn-outline-secondary w-100">
 															<i class="bi bi-pencil-square me-2"></i>Edit Novel
 														</a>

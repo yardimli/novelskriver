@@ -114,12 +114,12 @@
 		// Codex Entry Routes
 		Route::get('/novels/codex-entries/{codexEntry}', [CodexEntryController::class, 'show'])->name('codex-entries.show');
 		Route::post('/novels/{novel}/codex-entries', [CodexEntryController::class, 'store'])->name('codex-entries.store');
-		Route::patch('/codex-entries/{codexEntry}', [CodexEntryController::class, 'update'])->name('codex-entries.update'); // NEW: Route to update a codex entry.
-		Route::post('/codex-entries/{codexEntry}/process-text', [CodexEntryController::class, 'processText'])->name('codex-entries.process-text'); // NEW: Route for AI text processing.
+		Route::patch('/codex-entries/{codexEntry}', [CodexEntryController::class, 'update'])->name('codex-entries.update');
+		Route::post('/codex-entries/{codexEntry}/process-text', [CodexEntryController::class, 'processText'])->name('codex-entries.process-text');
 		Route::post('/codex-entries/{codexEntry}/generate-image', [CodexEntryController::class, 'generateImage'])->name('codex-entries.generate-image');
 		Route::post('/codex-entries/{codexEntry}/upload-image', [CodexEntryController::class, 'uploadImage'])->name('codex-entries.upload-image');
 
-		// NEW: Routes for linking/unlinking codex entries to each other.
+		//Routes for linking/unlinking codex entries to each other.
 		Route::post('/codex-entries/{codexEntry}/link/{linkedCodexEntry}', [CodexEntryController::class, 'attachLink'])->name('codex-entries.link.attach');
 		Route::delete('/codex-entries/{codexEntry}/link/{linkedCodexEntry}', [CodexEntryController::class, 'detachLink'])->name('codex-entries.link.detach');
 

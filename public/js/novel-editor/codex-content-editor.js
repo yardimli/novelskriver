@@ -1,5 +1,5 @@
 /**
- * MODIFIED: Manages in-place editing for codex entry windows, specifically
+ * Manages in-place editing for codex entry windows, specifically
  * the debounced saving of content. Toolbar logic is now in toolbar.js.
  */
 
@@ -14,7 +14,6 @@ export function setupCodexContentEditor(desktop) {
 	// --- Debounced Saving ---
 	desktop.addEventListener('input', (event) => {
 		const target = event.target;
-		// MODIFIED: Listen for input on any contenteditable field, not just codex-specific ones.
 		const editable = target.closest('[contenteditable="true"], .js-codex-title-input');
 		if (!editable) return;
 		

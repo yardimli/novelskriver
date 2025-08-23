@@ -19,7 +19,7 @@
 			$recentPosts = BlogPost::where('status', 'published')
 				->where('published_at', '<=', now())
 				->orderBy('published_at', 'desc')
-				->take(4) // As per template example
+				->take(4)
 				->get();
 
 			$allTags = BlogPost::where('status', 'published')
@@ -36,7 +36,7 @@
 				->unique()
 				->sort()
 				->values()
-				->take(10); // Limit tags displayed as per template example
+				->take(10);
 
 			return compact('categories', 'recentPosts', 'allTags');
 		}
@@ -76,8 +76,8 @@
 			}
 
 			$posts = $query->orderBy('published_at', 'desc')
-				->paginate(5) // Number of posts per page
-				->withQueryString(); // Appends current query parameters to pagination links
+				->paginate(5)
+				->withQueryString();
 
 			$sidebarData = $this->getSidebarData($request);
 

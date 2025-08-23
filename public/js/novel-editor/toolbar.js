@@ -1,5 +1,5 @@
 /**
- * NEW: Manages the top toolbar for text editing within contenteditable fields.
+ * Manages the top toolbar for text editing within contenteditable fields.
  * Handles formatting, highlighting, AI actions, and selection state.
  */
 

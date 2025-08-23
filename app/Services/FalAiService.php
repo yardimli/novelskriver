@@ -37,7 +37,6 @@
 		 * @param array $options Additional options for the API call (e.g., 'image_size').
 		 * @return string|null The URL of the generated image, or null on failure.
 		 */
-		// MODIFIED: Method now accepts an $options array for flexibility.
 		public function generateImage(string $prompt, array $options = []): ?string
 		{
 			if (!$this->apiKey) {

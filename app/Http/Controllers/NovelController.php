@@ -3,18 +3,18 @@
 	namespace App\Http\Controllers;
 
 	use App\Http\Controllers\LlmController;
-	use App\Models\Chapter; // NEW: Import Chapter model.
-	use App\Models\CodexCategory; // NEW: Import CodexCategory model.
-	use App\Models\CodexEntry; // NEW: Import CodexEntry model.
+	use App\Models\Chapter;
+	use App\Models\CodexCategory;
+	use App\Models\CodexEntry;
 	use App\Models\Image;
 	use App\Models\Novel;
-	use App\Models\Section; // NEW: Import Section model.
+	use App\Models\Section;
 	use App\Services\FalAiService;
 	use App\Services\ImageUploadService;
 	use Illuminate\Http\Request;
 	use Illuminate\Support\Facades\Auth;
-	use Illuminate\Support\Facades\DB; // NEW: Import DB facade for transactions.
-	use Illuminate\Support\Facades\File; // NEW: Import File facade to read structure files.
+	use Illuminate\Support\Facades\DB;
+	use Illuminate\Support\Facades\File;
 	use Illuminate\Support\Facades\Log;
 	use Illuminate\Support\Facades\Validator;
 	use Illuminate\View\View;
@@ -49,7 +49,6 @@
 		 * @param  ImageUploadService $imageUploader
 		 * @return \Illuminate\Http\RedirectResponse
 		 */
-		// MODIFIED: Injected services for AI image generation.
 		public function store(Request $request, LlmController $llm, FalAiService $fal, ImageUploadService $imageUploader)
 		{
 			$user = Auth::user();
@@ -71,7 +70,7 @@
 			$novel->user_id = $user->id;
 			$novel->title = $request->input('title');
 			$novel->author = $request->input('author');
-			$novel->status = 'draft'; // Default status
+			$novel->status = 'draft';
 
 			if ($request->filled('series_id')) {
 				$novel->series_id = $request->input('series_id');
@@ -80,7 +79,6 @@
 
 			$novel->save();
 
-			// NEW: Generate a cover image for the novel using AI.
 			try {
 				// Step 1: Generate a prompt for the cover image using the novel's title.
 				$promptGenModel = env('OPEN_ROUTER_MODEL', 'openai/gpt-4o-mini');
@@ -173,7 +171,6 @@
 		 * @param LlmController $llm
 		 * @return \Illuminate\Http\JsonResponse
 		 */
-		// NEW: Method to generate novel structure via AI.
 		public function generateStructure(Request $request, Novel $novel, LlmController $llm)
 		{
 			ini_set('max_execution_time', 300); // 300 seconds = 5 minutes

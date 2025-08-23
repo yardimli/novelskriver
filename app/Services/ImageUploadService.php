@@ -2,7 +2,6 @@
 
 	namespace App\Services;
 
-	// MODIFIED: Added necessary imports for the new method.
 	use Illuminate\Http\UploadedFile as IlluminateUploadedFile;
 	use Illuminate\Support\Facades\Http;
 	use Symfony\Component\HttpFoundation\File\UploadedFile as BaseUploadedFile;
@@ -150,7 +149,6 @@
 		 * @return array ['original_path' => ?string, 'thumbnail_path' => ?string]
 		 * @throws \Exception
 		 */
-		// NEW: Method to handle downloading and storing an image from a URL.
 		public function storeImageFromUrl(
 			string  $url,
 			string  $uploadConfigKey,

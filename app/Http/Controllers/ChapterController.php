@@ -25,7 +25,6 @@
 				return response()->json(['message' => 'Unauthorized'], 403);
 			}
 
-			// MODIFIED: Eager load codex entries (and their images) and the parent section.
 			$chapter->load('section', 'codexEntries.image');
 
 			return view('novel-editor.partials.chapter-window', compact('chapter'));

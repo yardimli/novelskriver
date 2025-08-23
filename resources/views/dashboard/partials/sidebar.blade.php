@@ -1,6 +1,5 @@
 {{-- User Info --}}
 <div class="d-flex align-items-center mb-4 justify-content-center justify-content-md-start">
-	{{-- UPDATED IMG TAG --}}
 	<img src="{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=8b3dff&color=fff' }}" alt="avatar" class="avatar avatar-lg rounded-circle">
 	<div class="ms-3">
 		<h5 class="mb-0">{{ Auth::user()->name }}</h5>

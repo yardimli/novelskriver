@@ -13,11 +13,8 @@
 	use Illuminate\Support\Facades\Log;
 	use Illuminate\Http\RedirectResponse;
 	use Illuminate\Http\Request; // Not strictly needed for these methods but good practice
-
-// --- ADD THESE ---
 	use Illuminate\Support\Facades\Http;
 	use Illuminate\Support\Facades\Storage;
-// --- END ADD ---
 
 	class SocialLoginController extends Controller
 	{
@@ -54,7 +51,7 @@
 				return redirect()->route('login')->with('error', 'Failed to authenticate with ' . ucfirst($provider) . '. Please try again.');
 			}
 
-			// --- NEW: Download avatar and prepare user data ---
+			// Download avatar and prepare user data ---
 			$avatarPath = null;
 			if ($socialUser->getAvatar()) {
 				try {
@@ -73,7 +70,6 @@
 			$nameParts = explode(' ', $socialUser->getName(), 2);
 			$firstName = $nameParts[0];
 			$lastName = $nameParts[1] ?? null;
-			// --- END NEW ---
 
 
 			// Find user by provider ID
@@ -94,7 +90,6 @@
 				$user->provider_name = $provider;
 				$user->provider_id = $socialUser->getId();
 
-				// MODIFIED: Update avatar only if it's not already set and we downloaded a new one.
 				if (!$user->avatar && $avatarPath) {
 					$user->avatar = $avatarPath;
 				}
@@ -110,7 +105,6 @@
 			}
 
 			// If no user exists with this email, create a new user
-			// MODIFIED: Use the new local avatar path and split names.
 			$newUser = User::create([
 				'name' => $socialUser->getName(),
 				'first_name' => $firstName,

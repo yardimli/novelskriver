@@ -8,7 +8,6 @@
 			
 			<div class="mt-3 pl-4 border-l-2 border-gray-300 dark:border-gray-600 space-y-2">
 				@forelse($section->chapters as $chapter)
-					{{-- MODIFIED: Changed div to a button to make it clickable for opening the chapter window. --}}
 					<button type="button"
 					        class="js-open-chapter w-full text-left p-2 rounded bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
 					        data-chapter-id="{{ $chapter->id }}"

@@ -1,14 +1,14 @@
 <?php namespace App\Http\Controllers;
 
 use App\Models\Cover;
-use App\Models\Template; // Ensure this is present
-use Illuminate\Http\Request; // Make sure this is present
+use App\Models\Template;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log; // Import Log facade
-use App\Models\ContactMessage; // Added for contact form
+use Illuminate\Support\Facades\Log;
+use App\Models\ContactMessage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
-use Artesaos\SEOTools\Facades\SEOTools; // Added for validation
+use Artesaos\SEOTools\Facades\SEOTools;
 
 class HomeController extends Controller
 {
@@ -22,7 +22,7 @@ class HomeController extends Controller
 
 		// Fetch all unique categories for the tag cloud
 		$allCoversForCategories = Cover::select(['categories'])
-			->where('cover_type_id', 1) // Assuming Kindle covers
+			->where('cover_type_id', 1)
 			->whereNotNull('categories')
 			->whereRaw("JSON_LENGTH(categories) > 0")
 			->get();

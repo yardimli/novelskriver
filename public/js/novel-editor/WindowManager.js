@@ -17,7 +17,7 @@ export default class WindowManager {
 		this.highestZIndex = 10;
 		this.windowCounter = 0;
 		this.minimizedOrder = ['outline-window', 'codex-window'];
-		this.selectedWindows = new Set(); // NEW: To track multiple selected windows.
+		this.selectedWindows = new Set();
 		
 		// Timeout for debouncing save state calls.
 		this.saveStateTimeout = null;
@@ -29,8 +29,6 @@ export default class WindowManager {
 		this.isPanning = false;
 		this.panStartX = 0;
 		this.panStartY = 0;
-		
-		// NEW: Bind the keydown handler to the class instance.
 		this.handleKeyDown = this.handleKeyDown.bind(this);
 	}
 	
@@ -48,7 +46,6 @@ export default class WindowManager {
 		
 		const win = document.createElement('div');
 		win.id = windowId;
-		// MODIFIED: Added a common class for all windows for styling purposes.
 		win.className = 'window-element absolute flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-300 dark:border-gray-700 overflow-hidden transition-all duration-100 ease-in-out';
 		win.style.width = `${width}px`;
 		win.style.height = `${height}px`;
@@ -88,7 +85,6 @@ export default class WindowManager {
 		
 		const rightSpacer = document.createElement('div');
 		
-		// MODIFIED: Add "+ New Entry" button to the codex window title bar and handle spacer width.
 		if (id === 'codex-window') {
 			rightSpacer.className = 'flex items-center justify-end min-w-[64px]';
 			const newEntryBtn = document.createElement('button');
@@ -117,8 +113,6 @@ export default class WindowManager {
 			this.scrollIntoView(windowId);
 		});
 		
-		
-		// NEW: Find modals within the content, move them to the body so they are not affected by canvas transform.
 		const modals = contentArea.querySelectorAll('.js-ai-modal, .js-upload-modal');
 		modals.forEach(modal => {
 			document.body.appendChild(modal);
@@ -143,12 +137,9 @@ export default class WindowManager {
 		this.makeDraggable(win, titleBar);
 		this.makeResizable(win, resizeHandle);
 		
-		// MODIFIED: Pass the event object to focus() to handle shift-clicks for multi-selection.
 		win.addEventListener('mousedown', (e) => this.focus(windowId, e), true);
 		
 		this.focus(windowId);
-		
-		// NEW: Update taskbar after creating a window to show its icon.
 		this.updateTaskbar();
 		
 		return windowId;
@@ -187,7 +178,7 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * MODIFIED: Pans the canvas to ensure the specified window is fully visible in the viewport.
+	 * Pans the canvas to ensure the specified window is fully visible in the viewport.
 	 * This version checks all four edges of the window against the viewport boundaries.
 	 * @param {string} windowId The ID of the window to bring into view.
 	 */
@@ -247,7 +238,7 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * MODIFIED: Brings a window to the front and handles multi-selection logic.
+	 * Brings a window to the front and handles multi-selection logic.
 	 * @param {string} windowId The ID of the window being interacted with.
 	 * @param {MouseEvent|null} event The mousedown event, used to check for the Shift key.
 	 */
@@ -288,7 +279,6 @@ export default class WindowManager {
 		}
 		
 		this.scrollIntoView(windowId);
-		// NEW: Update taskbar to reflect the newly focused window.
 		this.updateTaskbar();
 		this.saveState();
 	}
@@ -301,9 +291,8 @@ export default class WindowManager {
 		if (win) {
 			win.element.remove();
 			this.windows.delete(windowId);
-			this.selectedWindows.delete(windowId); // NEW: Remove from selection on close.
+			this.selectedWindows.delete(windowId);
 			
-			// NEW: If this was a codex entry window, remove its associated modals from the body.
 			if (windowId.startsWith('codex-entry-')) {
 				const entryId = windowId.replace('codex-entry-', '');
 				const aiModal = document.getElementById(`ai-modal-${entryId}`);
@@ -312,7 +301,6 @@ export default class WindowManager {
 				if (uploadModal) uploadModal.remove();
 			}
 			
-			// NEW: Update taskbar after closing a window.
 			this.updateTaskbar();
 			this.saveState();
 		}
@@ -337,11 +325,9 @@ export default class WindowManager {
 		win.isMinimized = true;
 		win.element.classList.add('hidden');
 		
-		// NEW: Deselect the window when it's minimized.
 		win.element.classList.remove('selected');
 		this.selectedWindows.delete(windowId);
 		
-		// NEW: If the minimized window was the active one, clear the active window state.
 		if (this.activeWindow === windowId) {
 			this.activeWindow = null;
 		}
@@ -366,7 +352,7 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * MODIFIED: Toggles a window between maximized and its original size.
+	 * Toggles a window between maximized and its original size.
 	 * When maximizing, it now also sets the canvas zoom to 100% and centers the view on the window.
 	 */
 	maximize(windowId) {
@@ -408,9 +394,6 @@ export default class WindowManager {
 		this.saveState();
 	}
 	
-	/**
-	 * MODIFIED: Adds drag functionality to a window, now supporting group dragging.
-	 */
 	makeDraggable(win, handle) {
 		const onMouseMove = (e) => {
 			// Iterate over all selected windows and move them in unison.
@@ -485,7 +468,6 @@ export default class WindowManager {
 			let newWidth = startWidth + (e.clientX - startX) / this.scale;
 			let newHeight = startHeight + (e.clientY - startY) / this.scale;
 			
-			// MODIFIED: Constrain window size to max limits and desktop boundaries.
 			const maxW = Math.min(this.viewport.clientWidth / this.scale, 1600);
 			const maxH = Math.min(this.viewport.clientHeight / this.scale, 1200);
 			
@@ -717,10 +699,6 @@ export default class WindowManager {
 		}
 	}
 	
-	/**
-	 * MODIFIED: Redraws the taskbar, showing persistent icons for key windows
-	 * and all minimized windows. Highlights the active window's icon.
-	 */
 	updateTaskbar() {
 		this.minimizedContainer.innerHTML = '';
 		const taskbarItems = new Map();
@@ -732,8 +710,6 @@ export default class WindowManager {
 			}
 		});
 		
-		// NEW: Ensure Outline and Codex windows are always shown if they exist,
-		// even if they are not minimized.
 		['outline-window', 'codex-window'].forEach(id => {
 			if (this.windows.has(id) && !taskbarItems.has(id)) {
 				const win = this.windows.get(id);
@@ -839,8 +815,7 @@ export default class WindowManager {
 		this.viewport.addEventListener('mousedown', this.handlePanStart.bind(this));
 		this.viewport.addEventListener('mousemove', this.handlePanMove.bind(this));
 		this.viewport.addEventListener('mouseup', this.handlePanEnd.bind(this));
-		this.viewport.addEventListener('mouseleave', this.handlePanEnd.bind(this)); // Stop panning if mouse leaves viewport
-		// NEW: Add keyboard shortcut listener.
+		this.viewport.addEventListener('mouseleave', this.handlePanEnd.bind(this));
 		document.addEventListener('keydown', this.handleKeyDown);
 	}
 	
@@ -875,7 +850,6 @@ export default class WindowManager {
 		event.preventDefault();
 		const zoomIntensity = 0.01;
 		const delta = event.deltaY > 0 ? -zoomIntensity : zoomIntensity;
-		// MODIFIED: Limit max zoom to 100% (1.0).
 		const newScale = Math.max(0.1, Math.min(1, this.scale + delta * this.scale));
 		
 		const viewportRect = this.viewport.getBoundingClientRect();
@@ -901,7 +875,7 @@ export default class WindowManager {
 	handlePanStart(event) {
 		// Only pan when clicking directly on the desktop, not on a window or its contents.
 		if (event.target === this.desktop) {
-			this._clearSelection(); // NEW: Deselect all windows when clicking the desktop.
+			this._clearSelection();
 			this.isPanning = true;
 			this.panStartX = event.clientX - this.panX;
 			this.panStartY = event.clientY - this.panY;
@@ -935,7 +909,6 @@ export default class WindowManager {
 	 * Zooms in on the center of the viewport.
 	 */
 	zoomIn() {
-		// MODIFIED: Limit max zoom to 100% (1.0).
 		this.scale = Math.min(1, this.scale * 1.2);
 		this.updateCanvasTransform(true);
 		this.saveState();
@@ -951,7 +924,7 @@ export default class WindowManager {
 	}
 	
 	/**
-	 * NEW: Zooms to a specific scale, keeping the viewport center stationary.
+	 * Zooms to a specific scale, keeping the viewport center stationary.
 	 * @param {number} targetScale The target scale factor.
 	 * @param {boolean} [animated=true] - Whether to animate the transition.
 	 */
@@ -1016,9 +989,6 @@ export default class WindowManager {
 	
 	// --- END: CANVAS METHODS ---
 	
-	/**
-	 * NEW: Helper method to deselect all windows.
-	 */
 	_clearSelection() {
 		this.selectedWindows.forEach(id => {
 			const win = this.windows.get(id);
@@ -1051,10 +1021,6 @@ export default class WindowManager {
 		this.focus(windowId);
 	}
 	
-	/**
-	 * NEW: Handles keyboard shortcuts for the editor.
-	 * @param {KeyboardEvent} event
-	 */
 	handleKeyDown(event) {
 		// Minimize with Ctrl+M or Cmd+M
 		if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'm') {

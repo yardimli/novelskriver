@@ -8,7 +8,7 @@
 	use Illuminate\Support\Facades\Auth;
 
 	/**
-	 * NEW: Controller to manage the relationship between chapters and codex entries.
+	 * Controller to manage the relationship between chapters and codex entries.
 	 */
 	class ChapterCodexController extends Controller
 	{

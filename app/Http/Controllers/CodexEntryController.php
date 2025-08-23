@@ -2,7 +2,7 @@
 
 	namespace App\Http\Controllers;
 
-	use App\Http\Controllers\LlmController; // MODIFIED: Import LlmController.
+	use App\Http\Controllers\LlmController;
 	use App\Models\CodexEntry;
 	use App\Models\Image;
 	use App\Models\Novel;
@@ -153,7 +153,7 @@
 		}
 
 		/**
-		 * NEW: Update the specified codex entry in storage.
+		 * Update the specified codex entry in storage.
 		 *
 		 * @param Request $request
 		 * @param CodexEntry $codexEntry
@@ -190,7 +190,7 @@
 		}
 
 		/**
-		 * NEW: Process a text selection using an LLM for actions like rephrasing.
+		 * Process a text selection using an LLM for actions like rephrasing.
 		 *
 		 * @param Request $request
 		 * @param CodexEntry $codexEntry
@@ -238,7 +238,7 @@
 		}
 
 		/**
-		 * NEW: Helper to build the prompt for text processing.
+		 * Helper to build the prompt for text processing.
 		 * @param string $text
 		 * @param string $action
 		 * @return string

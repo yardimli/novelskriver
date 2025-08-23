@@ -26,7 +26,7 @@ class Novel extends Model
 		'status',
 		'series_id',
 		'order_in_series',
-		'editor_state', // MODIFIED: Added editor_state.
+		'editor_state',
 	];
 
 	/**
@@ -34,7 +34,6 @@ class Novel extends Model
 	 *
 	 * @var array
 	 */
-	// NEW: Cast editor_state to array.
 	protected $casts = [
 		'editor_state' => 'array',
 	];
@@ -141,7 +140,6 @@ class Novel extends Model
 	 * Get the images for the novel.
 	 * @return HasMany
 	 */
-	// NEW: Added relationship to images.
 	public function images(): HasMany
 	{
 		return $this->hasMany(Image::class);

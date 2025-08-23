@@ -45,7 +45,6 @@
 				'thumb_quality' => 80,
 			],
 
-			// NEW: Added configuration for AI-generated novel covers.
 			'novel_covers' => [
 				'originals' => 'novels/covers/originals',
 				'thumbnails' => 'novels/covers/thumbnails',
@@ -54,7 +53,6 @@
 				'thumb_quality' => 85,
 			],
 
-			// NEW: Added configuration for novel codex entry images.
 			'novel_codex_entries' => [
 				'originals' => 'novels/codex/originals',
 				'thumbnails' => 'novels/codex/thumbnails',

@@ -5,7 +5,7 @@
 	use Illuminate\Database\Eloquent\Relations\Pivot;
 
 	/**
-	 * NEW: Represents the pivot model for the chapter_codex_entry table.
+	 * Represents the pivot model for the chapter_codex_entry table.
 	 *
 	 * This model defines the relationship between a Chapter and a CodexEntry.
 	 * While a dedicated model isn't always necessary for a simple pivot table,

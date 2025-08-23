@@ -135,10 +135,8 @@
 		 * Get the images for the user.
 		 * @return HasMany
 		 */
-		// NEW: Added relationship to images.
 		public function images(): HasMany
 		{
 			return $this->hasMany(Image::class);
 		}
-		// END: ADDED RELATIONSHIPS
 	}

@@ -1,5 +1,5 @@
 /**
- * NEW: This module sets up interactions for chapter windows, including drag-and-drop
+ * This module sets up interactions for chapter windows, including drag-and-drop
  * for codex entries and the logic for linking/unlinking them via API calls.
  * @param {HTMLElement} desktop - The main desktop element to attach listeners to.
  */
@@ -10,9 +10,8 @@ export function setupChapterEditor(desktop) {
 	desktop.addEventListener('dragstart', (event) => {
 		const draggable = event.target.closest('.js-draggable-codex');
 		if (draggable) {
-			// MODIFIED: Use a custom data type to prevent conflicts with text selection drags.
 			event.dataTransfer.setData('application/x-codex-entry-id', draggable.dataset.entryId);
-			event.dataTransfer.setData('text/plain', draggable.dataset.entryId); // Fallback for compatibility
+			event.dataTransfer.setData('text/plain', draggable.dataset.entryId);
 			event.dataTransfer.effectAllowed = 'link';
 		}
 	});
@@ -51,14 +50,13 @@ export function setupChapterEditor(desktop) {
 		dropZone.classList.remove('bg-blue-100', 'dark:bg-blue-900/50');
 		
 		const chapterId = dropZone.dataset.chapterId;
-		// MODIFIED: Check for our custom data type first. This prevents drops from selected text.
 		const codexEntryId = event.dataTransfer.getData('application/x-codex-entry-id');
 		
 		if (!chapterId || !codexEntryId) return;
 		
 		// Prevent dropping the same entry if it's already there
 		if (dropZone.querySelector(`.js-codex-tag[data-entry-id="${codexEntryId}"]`)) {
-			return; // Silently fail if tag already exists
+			return;
 		}
 		
 		try {

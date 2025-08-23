@@ -1,9 +1,6 @@
-{{-- This file contains the content for a single codex entry window. --}}
 <div class="p-4 flex flex-col h-full codex-entry-window-content select-text js-codex-drop-zone transition-colors duration-300" data-entry-id="{{ $codexEntry->id }}" data-entry-title="{{ $codexEntry->title }}">
-	{{-- MODIFIED: The floating toolbar has been removed from here and is now a global element. --}}
 	
 	<div class="flex-grow flex gap-4 overflow-hidden">
-		{{-- Image Section --}}
 		<div class="w-1/3 flex-shrink-0">
 			<div class="codex-image-container aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden transition-opacity duration-300">
 				<img src="{{ $codexEntry->image_url }}" alt="Image for {{ $codexEntry->title }}" class="w-full h-full object-cover">
@@ -16,17 +13,12 @@
 		
 		{{-- Details Section --}}
 		<div class="w-2/3 flex flex-col min-w-0">
-			{{-- Title and description are now in a non-scrolling, shrinking header area. --}}
 			<div class="flex-shrink-0 prose-sm dark:prose-invert max-w-none">
-				{{-- MODIFIED: Title is now an input field --}}
 				<input type="text" name="title" value="{{ $codexEntry->title }}" class="js-codex-title-input text-2xl font-bold w-full bg-transparent border-0 p-0 focus:ring-0 focus:border-b-2 focus:border-teal-500" placeholder="Codex Entry Title">
 				
-				{{-- MODIFIED: Description is now a contenteditable div --}}
 				<div class="js-codex-editable lead mt-2" data-name="description" contenteditable="true" data-placeholder="Enter a short summary...">{{ $codexEntry->description }}</div>
 			</div>
 			
-			{{-- The main content is in a scrollable container that fills the remaining space. --}}
-			{{-- MODIFIED: Content is now a contenteditable div --}}
 			<div class="mt-4 flex-grow overflow-y-auto prose prose-sm dark:prose-invert max-w-none js-codex-editable" data-name="content" contenteditable="true" data-placeholder="Enter detailed content here...">
 				@if($codexEntry->content)
 					{!! $codexEntry->content !!}
@@ -43,7 +35,6 @@
 		<div class="js-codex-tags-container flex flex-wrap gap-2">
 			@foreach($codexEntry->linkedEntries as $entry)
 				<div class="js-codex-tag group/tag relative inline-flex items-center gap-2 bg-gray-200 dark:bg-gray-700 rounded-full pr-2" data-entry-id="{{ $entry->id }}">
-					{{-- This button opens the codex entry window --}}
 					<button type="button"
 					        class="js-open-codex-entry flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
 					        data-entry-id="{{ $entry->id }}"
@@ -51,7 +42,6 @@
 						<img src="{{ $entry->thumbnail_url }}" alt="Thumbnail for {{ $entry->title }}" class="w-5 h-5 object-cover rounded-full flex-shrink-0">
 						<span class="js-codex-tag-title text-xs font-medium">{{ $entry->title }}</span>
 					</button>
-					{{-- This button removes the link, appearing on hover --}}
 					<button type="button"
 					        class="js-remove-codex-codex-link absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/tag:opacity-100 transition-opacity"
 					        data-parent-entry-id="{{ $codexEntry->id }}"
@@ -65,8 +55,6 @@
 			@endforeach
 		</div>
 	</div>
-	
-	{{-- Modals remain at the bottom, outside the scrolling flow --}}
 	
 	<!-- AI Generation Modal -->
 	<div id="ai-modal-{{ $codexEntry->id }}" class="js-ai-modal fixed inset-0 bg-black/60 z-[9998] flex items-center justify-center p-4 hidden" aria-labelledby="ai-modal-title-{{ $codexEntry->id }}" role="dialog" aria-modal="true">

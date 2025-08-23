@@ -30,13 +30,9 @@
 		 */
 		public function update(ProfileUpdateRequest $request): RedirectResponse
 		{
-			// The request is already validated by ProfileUpdateRequest
 			$user = $request->user();
 
-			// The 'name' field is a combination of first and last name
 			$user->name = $request->input('first_name') . ' ' . $request->input('last_name');
-
-			// Fill other model attributes from the request
 			$user->fill($request->except(['name', 'first_name', 'last_name']));
 
 			// If the user changes their email, we must reset the verification status.

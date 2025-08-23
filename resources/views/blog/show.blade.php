@@ -4,7 +4,6 @@
 @section('title', $post->title . ' - Free Kindle Covers Blog')
 
 @push('styles')
-	{{-- Add any specific styles for blog detail if needed --}}
 	<style>
       .details-content .blog-post-content img {
           max-width: 100%;

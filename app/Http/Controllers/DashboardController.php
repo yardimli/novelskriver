@@ -2,14 +2,13 @@
 
 	namespace App\Http\Controllers;
 
-	use App\Http\Controllers\LlmController; // MODIFIED: Added LlmController import.
+	use App\Http\Controllers\LlmController;
 	use App\Models\Series;
 	use Illuminate\Http\Request;
 	use Illuminate\Support\Facades\Auth;
-	use Illuminate\Support\Facades\File; // MODIFIED: Added File facade import.
-	use Illuminate\Support\Facades\Log; // MODIFIED: Added Log facade import.
+	use Illuminate\Support\Facades\File;
+	use Illuminate\Support\Facades\Log;
 	use Illuminate\View\View;
-	// No need to import Collection as we are using the collect() helper or existing collections.
 
 	class DashboardController extends Controller
 	{
@@ -20,7 +19,6 @@
 		 * @param LlmController $llm
 		 * @return View
 		 */
-		// MODIFIED: Injected LlmController to fetch available models.
 		public function index(Request $request, LlmController $llm): View
 		{
 			$user = Auth::user();
@@ -30,20 +28,15 @@
 					'series',
 					'images'
 				])
-				->withCount('chapters') // NEW: Get the count of chapters for each novel.
+				->withCount('chapters')
 				->latest('created_at')
 				->get();
 
 			$groupedNovels = $novels->groupBy('series_id');
-
-			// MODIFIED: Corrected the key for pulling novels without a series.
-			// Laravel's groupBy uses an empty string ('') as the key for null values.
 			$novelsWithoutSeries = $groupedNovels->pull('') ?? collect();
 
-			// The rest are novels with series. We need to get the Series models for the titles.
 			$seriesWithNovels = collect();
 			if ($groupedNovels->isNotEmpty()) {
-				// The keys will be actual series IDs now, as the '' group has been removed.
 				$seriesIds = $groupedNovels->keys();
 
 				if ($seriesIds->isNotEmpty()) {
@@ -57,11 +50,10 @@
 							];
 						}
 						return null;
-					})->filter()->values(); // Use values() to reset keys for consistent array-like behavior in the view.
+					})->filter()->values();
 				}
 			}
 
-			// NEW: Get structure files from resources/structures directory.
 			$structures = [];
 			try {
 				$structureFiles = File::files(resource_path('structures'));
@@ -74,7 +66,6 @@
 				Log::error('Could not read structure files: ' . $e->getMessage());
 			}
 
-			// NEW: Get LLM models for the dropdown.
 			$llmModels = [];
 			try {
 				$apiModels = $llm->getModels();
@@ -83,11 +74,9 @@
 				}
 			} catch (\Exception $e) {
 				Log::error('Could not fetch LLM models for dashboard: ' . $e->getMessage());
-				// Fallback to the default model if the API call fails.
 				$llmModels = [env('OPEN_ROUTER_MODEL', 'openai/gpt-4o-mini')];
 			}
 
-			// NEW: A list of top languages for the dropdown.
 			$languages = [
 				'English', 'Mandarin Chinese', 'Hindi', 'Spanish', 'French',
 				'Standard Arabic', 'Bengali', 'Russian', 'Portuguese', 'Urdu',

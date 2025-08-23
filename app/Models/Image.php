@@ -21,7 +21,7 @@
 		protected $fillable = [
 			'user_id',
 			'novel_id',
-			'codex_entry_id', // NEW: Added codex_entry_id.
+			'codex_entry_id',
 			'image_local_path',
 			'thumbnail_local_path',
 			'remote_url',
@@ -46,7 +46,7 @@
 		}
 
 		/**
-		 * NEW: Get the codex entry this image is associated with.
+		 * Get the codex entry this image is associated with.
 		 */
 		public function codexEntry(): BelongsTo
 		{

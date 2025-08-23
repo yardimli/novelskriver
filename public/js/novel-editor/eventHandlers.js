@@ -60,7 +60,7 @@ export function setupCodexEntryHandler(desktop, windowManager) {
 }
 
 /**
- * NEW: Sets up the event listener for opening chapter windows.
+ * Sets up the event listener for opening chapter windows.
  * Uses event delegation on the desktop to handle clicks on dynamically loaded content.
  * @param {HTMLElement} desktop - The main desktop element to attach the listener to.
  * @param {WindowManager} windowManager - The window manager instance.
@@ -226,13 +226,13 @@ export function setupOpenWindowsMenu(windowManager) {
 }
 
 /**
- * MODIFIED: Sets up the canvas zoom controls, including the new 100% zoom button.
+ * Sets up the canvas zoom controls, including the new 100% zoom button.
  * @param {WindowManager} windowManager - The window manager instance which now handles canvas state.
  */
 export function setupCanvasControls(windowManager) {
 	const zoomInBtn = document.getElementById('zoom-in-btn');
 	const zoomOutBtn = document.getElementById('zoom-out-btn');
-	const zoom100Btn = document.getElementById('zoom-100-btn'); // NEW: Get the 100% zoom button.
+	const zoom100Btn = document.getElementById('zoom-100-btn');
 	const zoomFitBtn = document.getElementById('zoom-fit-btn');
 	
 	if (zoomInBtn) {
@@ -241,7 +241,6 @@ export function setupCanvasControls(windowManager) {
 	if (zoomOutBtn) {
 		zoomOutBtn.addEventListener('click', () => windowManager.zoomOut());
 	}
-	// NEW: Add click handler for the 100% zoom button.
 	if (zoom100Btn) {
 		zoom100Btn.addEventListener('click', () => windowManager.zoomTo(1));
 	}

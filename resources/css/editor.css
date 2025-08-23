@@ -58,7 +58,7 @@
     cursor: grabbing;
 }
 
-/* NEW: Set default cursor for windows to pointer, and text cursor for editable fields. */
+/* Set default cursor for windows to pointer, and text cursor for editable fields. */
 .window-element {
     cursor: pointer;
 }
@@ -66,13 +66,13 @@
     cursor: text;
 }
 
-/* NEW: Styles for contenteditable placeholders */
+/* Styles for contenteditable placeholders */
 [contenteditable][data-placeholder]:empty:before {
     content: attr(data-placeholder);
     @apply text-gray-400 dark:text-gray-500 italic pointer-events-none;
 }
 
-/* NEW: Styles for the top toolbar */
+/* Styles for the top toolbar */
 #top-toolbar .js-toolbar-btn {
     @apply p-2 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors;
 }

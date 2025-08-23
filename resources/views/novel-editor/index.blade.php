@@ -30,7 +30,6 @@
 	<link href="{{ asset('theme/assets/libs/bootstrap-icons/font/bootstrap-icons.min.css') }}" rel="stylesheet" />
 	<link rel="stylesheet" href="{{ asset('theme/assets/fonts/css/boxicons.min.css') }}" />
 	
-	{{-- MODIFIED: Added new toolbar script --}}
 	<script type="module" src="{{ asset('/js/novel-editor/main.js') }}"></script>
 	<script type="module" src="{{ asset('/js/novel-editor/toolbar.js') }}"></script>
 	<script src="{{ asset('/js/novel-editor/codex-entry-editor.js') }}"></script>
@@ -38,7 +37,6 @@
 	@vite(['resources/css/editor.css'])
 
 </head>
-{{-- MODIFIED: Body is now a flex column to stack the toolbar, viewport, and taskbar. --}}
 <body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden select-none flex flex-col"
       data-novel-id="{{ $novel->id }}"
       data-editor-state="{{ json_encode($novel->editor_state) }}">
@@ -108,19 +106,13 @@
 	</div>
 </div>
 
-{{-- MODIFIED: Viewport is now a flex-grow element to fill space between toolbars. --}}
 <div id="viewport" class="relative flex-grow z-10 overflow-hidden">
-	{{-- The "desktop" is now a huge, absolutely positioned canvas inside the viewport.
-	     Its position and scale will be manipulated by JavaScript for panning and zooming. --}}
 	<div id="desktop" class="absolute" style="width: 5000px; height: 5000px; transform-origin: 0 0;">
-		{{-- Windows will be dynamically inserted here by JavaScript --}}
 	</div>
 </div>
 
-{{-- MODIFIED: Taskbar is now a flex-shrink element, no longer absolutely positioned. --}}
 <div id="taskbar" class="flex-shrink-0 h-12 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center px-2 gap-2 z-50 border-t border-gray-200 dark:border-gray-700">
 	
-	{{-- "Open Windows" menu button and popup. --}}
 	<div class="relative">
 		<button id="open-windows-btn" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none rounded-lg text-sm p-2.5">
 			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25A2.25 2.25 0 0 1 5.25 3h9.75a2.25 2.25 0 0 1 2.25 2.25Z" /></svg>

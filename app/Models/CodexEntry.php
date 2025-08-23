@@ -62,7 +62,7 @@
 		}
 
 		/**
-		 * NEW: Get the codex entries that this entry links to.
+		 * Get the codex entries that this entry links to.
 		 * This defines a self-referencing many-to-many relationship.
 		 */
 		public function linkedEntries(): BelongsToMany
@@ -71,7 +71,7 @@
 		}
 
 		/**
-		 * NEW: Get the codex entries that link to this entry.
+		 * Get the codex entries that link to this entry.
 		 */
 		public function linkedByEntries(): BelongsToMany
 		{
@@ -103,7 +103,6 @@
 				return Storage::disk('public')->url($this->image->thumbnail_local_path);
 			}
 
-			// You can use a different placeholder for thumbnails if you wish
 			return asset('images/codex-placeholder.png');
 		}
 	}

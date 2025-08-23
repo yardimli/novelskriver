@@ -3,12 +3,12 @@
 	namespace App\Http\Controllers;
 
 	use App\Models\Novel;
-	use Illuminate\Http\JsonResponse; // NEW: Import JsonResponse.
+	use Illuminate\Http\JsonResponse;
 	use Illuminate\Http\Request;
 	use Illuminate\View\View;
 
 	/**
-	 * NEW: Controller to manage the novel editing interface.
+	 * Controller to manage the novel editing interface.
 	 */
 	class NovelEditorController extends Controller
 	{
@@ -38,7 +38,7 @@
 		}
 
 		/**
-		 * NEW: Save the editor state (window positions, canvas zoom, etc.) to the database.
+		 * Save the editor state (window positions, canvas zoom, etc.) to the database.
 		 *
 		 * @param Request $request
 		 * @param Novel $novel
@@ -51,8 +51,6 @@
 				return response()->json(['message' => 'Unauthorized'], 403);
 			}
 
-			// Basic validation to ensure we're receiving an object.
-			// More specific validation could be added for windows and canvas properties.
 			$validated = $request->validate([
 				'state' => 'required|array',
 				'state.windows' => 'sometimes|array',

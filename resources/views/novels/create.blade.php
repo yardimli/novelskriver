@@ -32,7 +32,6 @@
 					<p class="lead text-muted">Wonderful! You're about to write your next masterpiece, so let's get started.</p>
 				</div>
 				
-				{{-- MODIFIED: Added an ID to the form for easier selection in JS. --}}
 				<form action="{{ route('novels.store') }}" method="POST" id="createNovelForm">
 					@csrf
 					<div class="book-details-card shadow-sm">
@@ -179,7 +178,7 @@
 				});
 			});
 			
-			// New Series Modal Logic
+			// Series Modal Logic
 			const saveNewSeriesBtn = document.getElementById('saveNewSeriesBtn');
 			const newSeriesModal = new bootstrap.Modal(document.getElementById('newSeriesModal'));
 			const newSeriesTitleInput = document.getElementById('new_series_title');
@@ -225,7 +224,7 @@
 				newSeriesTitleInput.classList.remove('is-invalid');
 			});
 			
-			// NEW: Handle Create Novel button state on form submission.
+			// Handle Create Novel button state on form submission.
 			const createNovelForm = document.getElementById('createNovelForm');
 			if (createNovelForm) {
 				createNovelForm.addEventListener('submit', function() {

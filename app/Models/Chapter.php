@@ -5,7 +5,7 @@
 	use Illuminate\Database\Eloquent\Factories\HasFactory;
 	use Illuminate\Database\Eloquent\Model;
 	use Illuminate\Database\Eloquent\Relations\BelongsTo;
-	use Illuminate\Database\Eloquent\Relations\BelongsToMany; // NEW: Import BelongsToMany.
+	use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 	use Illuminate\Database\Eloquent\Relations\HasMany;
 
 	class Chapter extends Model
@@ -48,7 +48,7 @@
 		 }
 
 		/**
-		 * NEW: Get the codex entries linked to this chapter.
+		 * Get the codex entries linked to this chapter.
 		 */
 		public function codexEntries(): BelongsToMany
 		{

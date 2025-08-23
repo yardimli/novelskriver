@@ -1,5 +1,3 @@
-{{-- This file contains the content for a single chapter window. --}}
-{{-- MODIFIED: Added drop zone class and data attribute. Replaced beats with codex entry tags. --}}
 <div class="p-4 flex flex-col h-full chapter-window-content select-text js-chapter-drop-zone transition-colors duration-300" data-chapter-id="{{ $chapter->id }}">
 	<div class="prose prose-sm dark:prose-invert max-w-none flex-shrink-0">
 		{{-- NEW: Display Act and Chapter number for context. --}}
@@ -42,8 +40,6 @@
 		</div>
 	</div>
 	
-	{{-- MODIFIED: This empty div acts as a flexible spacer and ensures the content above doesn't stretch weirdly. --}}
 	<div class="flex-grow">
-		{{-- Content area for future use, e.g., writing the chapter text. --}}
 	</div>
 </div>
