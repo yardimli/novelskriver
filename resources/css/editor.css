@@ -1,4 +1,3 @@
-/* resources/css/editor.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -68,8 +67,6 @@
     cursor: text;
 }
 
-/* DELETED: Old contenteditable placeholder styles */
-
 /* Styles for the top toolbar */
 #top-toolbar .js-toolbar-btn {
     @apply p-2 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors;
@@ -77,6 +74,11 @@
 
 #top-toolbar .js-toolbar-btn:disabled {
     @apply text-gray-400 dark:text-gray-500 bg-transparent cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent;
+}
+
+/* NEW: Style for active (toggled) toolbar buttons */
+#top-toolbar .js-toolbar-btn.active {
+    @apply bg-gray-300 dark:bg-gray-600;
 }
 
 #top-toolbar .js-toolbar-btn svg {

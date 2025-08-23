@@ -30,7 +30,6 @@
 	<link href="{{ asset('theme/assets/libs/bootstrap-icons/font/bootstrap-icons.min.css') }}" rel="stylesheet" />
 	<link rel="stylesheet" href="{{ asset('theme/assets/fonts/css/boxicons.min.css') }}" />
 	
-	{{-- MODIFIED: Use the @vite directive to load all assets --}}
 	@vite(['resources/css/editor.css', 'resources/js/novel-editor/main.js'])
 
 </head>
@@ -39,46 +38,62 @@
       data-editor-state="{{ json_encode($novel->editor_state) }}">
 
 {{-- Top toolbar, always visible. --}}
-<div id="top-toolbar" class="flex-shrink-0 h-12 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center px-4 gap-4 z-50 border-b border-gray-200 dark:border-gray-700">
+<div id="top-toolbar" class="flex-shrink-0 h-12 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center px-4 gap-2 z-50 border-b border-gray-200 dark:border-gray-700">
 	{{-- History Section --}}
 	<div class="flex items-center gap-1">
-		<button type="button" class="js-toolbar-btn" data-command="undo" title="Undo" disabled>
+		<button type="button" class="js-toolbar-btn" data-command="undo" title="Undo (Ctrl+Z)" disabled>
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/></svg>
 		</button>
-		<button type="button" class="js-toolbar-btn" data-command="redo" title="Redo" disabled>
+		<button type="button" class="js-toolbar-btn" data-command="redo" title="Redo (Ctrl+Y)" disabled>
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
 		</button>
 	</div>
 	<div class="w-px h-6 bg-gray-300 dark:bg-gray-600"></div> {{-- Divider --}}
+	
+	{{-- MODIFIED: Added Heading Dropdown --}}
+	<div class="relative js-dropdown-container">
+		<button type="button" class="js-toolbar-btn js-heading-btn w-28 text-sm px-3 text-left" disabled>Paragraph</button>
+		<div class="js-dropdown absolute top-full mt-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded p-1 hidden flex-col gap-1 w-40 shadow-lg">
+			<button class="js-heading-option p-2 rounded w-full text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700" data-level="0">Paragraph</button>
+			<button class="js-heading-option p-2 rounded w-full text-left text-xl font-bold hover:bg-gray-100 dark:hover:bg-gray-700" data-level="1">Heading 1</button>
+			<button class="js-heading-option p-2 rounded w-full text-left text-lg font-bold hover:bg-gray-100 dark:hover:bg-gray-700" data-level="2">Heading 2</button>
+			<button class="js-heading-option p-2 rounded w-full text-left text-base font-bold hover:bg-gray-100 dark:hover:bg-gray-700" data-level="3">Heading 3</button>
+			<button class="js-heading-option p-2 rounded w-full text-left text-sm font-bold hover:bg-gray-100 dark:hover:bg-gray-700" data-level="4">Heading 4</button>
+		</div>
+	</div>
+	<div class="w-px h-6 bg-gray-300 dark:bg-gray-600"></div> {{-- Divider --}}
+	
 	{{-- Formatting Section --}}
 	<div class="flex items-center gap-1">
 		<button type="button" class="js-toolbar-btn font-bold" data-command="bold" title="Bold" disabled>B</button>
 		<button type="button" class="js-toolbar-btn italic" data-command="italic" title="Italic" disabled>I</button>
 		<button type="button" class="js-toolbar-btn underline" data-command="underline" title="Underline" disabled>U</button>
+		{{-- NEW: Strikethrough button --}}
+		<button type="button" class="js-toolbar-btn line-through" data-command="strike" title="Strikethrough" disabled>S</button>
 		<div class="relative js-dropdown-container">
 			<button type="button" class="js-toolbar-btn" title="Highlight" disabled>
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.823 2.215a.5.5 0 0 0-.693-.693l-1.359.235-2.533-2.533a.5.5 0 0 0-.707 0L8.294 1.453a.5.5 0 0 0 0 .707l2.533 2.533-.235 1.359a.5.5 0 0 0 .693.693l1.55-1.55 2.43 2.43a.5.5 0 0 0 .707 0l2.235-2.235a.5.5 0 0 0 0-.707L15.823 2.215zm-1.06 1.06-2.43-2.43 2.235-2.235 2.43 2.43-2.235 2.235z"/><path d="M1.25 9.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25zM1.25 12.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25zM1.25 15.25a.25.25 0 0 1 .25-.25h10.5a.25.25 0 0 1 0 .5H1.5a.25.25 0 0 1-.25-.25z"/></svg>
 			</button>
 			<div class="js-dropdown absolute top-full mt-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded p-1 hidden flex-col gap-1 w-32 shadow-lg">
-				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-yellow">
-					<span class="w-4 h-4 rounded-full" style="background-color: #fef08a;"></span> Yellow
-				</button>
-				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-green">
-					<span class="w-4 h-4 rounded-full" style="background-color: #a7f3d0;"></span> Green
-				</button>
-				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-blue">
-					<span class="w-4 h-4 rounded-full" style="background-color: #bfdbfe;"></span> Blue
-				</button>
-				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-red">
-					<span class="w-4 h-4 rounded-full" style="background-color: #fecaca;"></span> Red
-				</button>
-				<button class="js-highlight-option p-1 rounded w-full text-left text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="transparent">
-					None
-				</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-yellow"><span class="w-4 h-4 rounded-full" style="background-color: #fef08a;"></span> Yellow</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-green"><span class="w-4 h-4 rounded-full" style="background-color: #a7f3d0;"></span> Green</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-blue"><span class="w-4 h-4 rounded-full" style="background-color: #bfdbfe;"></span> Blue</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left flex items-center gap-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="highlight-red"><span class="w-4 h-4 rounded-full" style="background-color: #fecaca;"></span> Red</button>
+				<button class="js-highlight-option p-1 rounded w-full text-left text-xs hover:bg-gray-100 dark:hover:bg-gray-700" data-bg="transparent">None</button>
 			</div>
 		</div>
 	</div>
 	<div class="w-px h-6 bg-gray-300 dark:bg-gray-600"></div> {{-- Divider --}}
+	
+	{{-- NEW: Block formatting section --}}
+	<div class="flex items-center gap-1">
+		<button type="button" class="js-toolbar-btn" data-command="bullet_list" title="Bullet List" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm-3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg></button>
+		<button type="button" class="js-toolbar-btn" data-command="ordered_list" title="Ordered List" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/><path d="M1.713 11.865v-.474H2c.217 0 .363-.137.363-.317 0-.185-.158-.31-.363-.31-.223 0-.363.136-.363.308H1.341c0-.363.306-.638.898-.638.388 0 .644.17.644.468 0 .225-.181.34-.384.393v.03c.27.04.438.227.438.482 0 .262-.217.487-.644.487-.422 0-.704-.24-.704-.634h.368c0 .258.209.425.585.425.336 0 .52-.174.52-.414 0-.23-.185-.38-.52-.38h-.234v-.474zM2.57 5.684h.332V4.14H1.909v.54h.32v4.2H1.91v.54h1.332V9.35H2.57V5.684zM.5 3.465h.333v.54H.5v-.54zM3.05 3h.634v.54H3.05V3z"/></svg></button>
+		<button type="button" class="js-toolbar-btn" data-command="blockquote" title="Blockquote" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12 12a1 1 0 0 0 1-1V5.5a.5.5 0 0 0-1 0V11a.5.5 0 0 1-1 0V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2zm-9 1a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></button>
+		<button type="button" class="js-toolbar-btn" data-command="horizontal_rule" title="Horizontal Rule" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/></svg></button>
+	</div>
+	<div class="w-px h-6 bg-gray-300 dark:bg-gray-600"></div> {{-- Divider --}}
+	
 	{{-- AI Tools Section --}}
 	<div class="flex items-center gap-1">
 		@foreach(['Expand', 'Rephrase', 'Shorten'] as $action)

@@ -187,15 +187,13 @@ export default class WindowManager {
 		if (!win || win.isMinimized) return;
 		
 		const el = win.element;
-		const padding = 150; // 50px padding from the viewport edges
+		const padding = 150;
 		
-		// Get window's position and size in the desktop's coordinate system
 		const winLeft = el.offsetLeft;
 		const winTop = el.offsetTop;
 		const winWidth = el.offsetWidth;
 		const winHeight = el.offsetHeight;
 		
-		// Calculate the window's bounding box in the viewport's coordinate system
 		const viewLeft = (winLeft * this.scale) + this.panX;
 		const viewTop = (winTop * this.scale) + this.panY;
 		const viewRight = viewLeft + (winWidth * this.scale);
@@ -207,29 +205,24 @@ export default class WindowManager {
 		let deltaX = 0;
 		let deltaY = 0;
 		
-		// Check horizontal position.
-		// The `else if` is important for windows wider than the viewport, preventing jitter.
-		// It prioritizes aligning the left edge.
 		if (viewLeft < padding) {
-			// Window's left edge is off-screen to the left. Pan right.
 			deltaX = padding - viewLeft;
 		} else if (viewRight > viewportWidth - padding) {
-			// Window's right edge is off-screen to the right. Pan left.
 			deltaX = (viewportWidth - padding) - viewRight;
 		}
 		
-		// Check vertical position.
-		// Prioritizes aligning the top edge for windows taller than the viewport.
 		if (viewTop < padding) {
-			// Window's top edge is off-screen to the top. Pan down.
 			deltaY = padding - viewTop;
 		} else if (viewBottom > viewportHeight - padding) {
-			// Window's bottom edge is off-screen to the bottom. Pan up.
 			deltaY = (viewportHeight - padding) - viewBottom;
 		}
 		
-		// Apply the calculated adjustments if any are needed.
-		if (deltaX !== 0 || deltaY !== 0) {
+		// NEW: Define a tolerance to prevent jitter from floating point inaccuracies.
+		const tolerance = 15;
+		
+		// MODIFIED: Only pan if the adjustment is larger than the tolerance.
+		// This stops the function from making tiny, unnecessary adjustments when the window is already visible.
+		if (Math.abs(deltaX) > tolerance || Math.abs(deltaY) > tolerance) {
 			this.panX += deltaX;
 			this.panY += deltaY;
 			this.updateCanvasTransform(true); // Animate the pan

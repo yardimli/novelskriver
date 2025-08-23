@@ -3,9 +3,10 @@
  * Handles formatting, highlighting, AI actions, and selection state.
  */
 
-import { getActiveEditor, schema } from './codex-content-editor.js';
-import { toggleMark } from 'prosemirror-commands';
+// MODIFIED: Removed schema import to break circular dependency.
+import { toggleMark, setBlockType, wrapIn } from 'prosemirror-commands';
 import { history, undo, redo } from 'prosemirror-history';
+import { wrapInList } from 'prosemirror-schema-list';
 
 let activeEditorView = null;
 const toolbar = document.getElementById('top-toolbar');
@@ -20,25 +21,77 @@ export function updateToolbarState(view) {
 	activeEditorView = view;
 	const allBtns = toolbar.querySelectorAll('.js-toolbar-btn');
 	
+	const isMarkActive = (state, type) => {
+		if (!type) return false;
+		const { from, $from, to, empty } = state.selection;
+		if (empty) {
+			// Check stored marks for the cursor position.
+			return !!(state.storedMarks || $from.marks()).some(mark => mark.type === type);
+		}
+		// Check if the mark exists anywhere in the selected range.
+		return state.doc.rangeHasMark(from, to, type);
+	};
+	
 	if (view && view.state) {
 		const { state } = view;
-		const { from, to, empty } = state.selection;
+		const { schema } = state; // MODIFIED: Get schema from the active editor's state.
+		const { from, to, empty, $from } = state.selection;
 		
 		const isTextSelected = !empty;
 		
-		// Enable/disable buttons based on selection and command availability.
+		// Enable/disable buttons and set active state
 		allBtns.forEach(btn => {
 			const cmd = btn.dataset.command;
-			if (cmd === 'undo') {
-				btn.disabled = !undo(state);
-			} else if (cmd === 'redo') {
-				btn.disabled = !redo(state);
-			} else if (btn.closest('.js-dropdown-container') || btn.classList.contains('js-ai-action-btn')) {
-				btn.disabled = !isTextSelected;
-			} else if (cmd) {
+			let commandFn, markType;
+			
+			// Determine command function for enabling/disabling and mark type for active state
+			switch (cmd) {
+				case 'undo': btn.disabled = !undo(state); return;
+				case 'redo': btn.disabled = !redo(state); return;
+				case 'bold': markType = schema.marks.strong; commandFn = toggleMark(markType); break;
+				case 'italic': markType = schema.marks.em; commandFn = toggleMark(markType); break;
+				case 'underline': markType = schema.marks.underline; commandFn = toggleMark(markType); break;
+				case 'strike': markType = schema.marks.strike; commandFn = toggleMark(markType); break;
+				case 'blockquote': commandFn = wrapIn(schema.nodes.blockquote); break;
+				case 'bullet_list': commandFn = wrapInList(schema.nodes.bullet_list); break;
+				case 'ordered_list': commandFn = wrapInList(schema.nodes.ordered_list); break;
+				case 'horizontal_rule':
+					// Special case, enabled if selection exists to replace it.
+					// This command can run even with an empty selection.
+					btn.disabled = !((state, dispatch) => {
+						if (dispatch) dispatch(state.tr.replaceSelectionWith(schema.nodes.horizontal_rule.create()));
+						return true;
+					})(state);
+					return;
+			}
+			
+			// General disable logic for selection-based dropdowns
+			if (btn.closest('.js-dropdown-container') || btn.classList.contains('js-ai-action-btn')) {
 				btn.disabled = !isTextSelected;
 			}
+			
+			// Disable based on command executability
+			if (commandFn) {
+				btn.disabled = !commandFn(state);
+			}
+			
+			// Set active state for marks
+			if (markType) {
+				btn.classList.toggle('active', isMarkActive(state, markType));
+			}
 		});
+		
+		// Update heading dropdown text and disabled state
+		const headingBtn = toolbar.querySelector('.js-heading-btn');
+		if (headingBtn) {
+			const parent = $from.parent;
+			if (parent.type.name === 'heading') {
+				headingBtn.textContent = `Heading ${parent.attrs.level}`;
+			} else {
+				headingBtn.textContent = 'Paragraph';
+			}
+			headingBtn.disabled = !setBlockType(schema.nodes.paragraph)(state) && !setBlockType(schema.nodes.heading, { level: 1 })(state);
+		}
 		
 		// Update word count for the selection.
 		if (isTextSelected) {
@@ -52,6 +105,8 @@ export function updateToolbarState(view) {
 	} else {
 		// No active editor, so disable all buttons and reset word count.
 		allBtns.forEach(btn => { btn.disabled = true; });
+		const headingBtn = toolbar.querySelector('.js-heading-btn');
+		if (headingBtn) headingBtn.textContent = 'Paragraph';
 		wordCountEl.textContent = 'No text selected';
 	}
 }
@@ -59,38 +114,51 @@ export function updateToolbarState(view) {
 /**
  * Applies a formatting command to the active editor.
  * @param {string} command The command name (e.g., 'bold', 'italic').
+ * @param {object} [attrs={}] Optional attributes for the command (e.g., heading level).
  */
-function applyFormatCommand(command) {
+function applyCommand(command, attrs = {}) {
 	if (!activeEditorView) return;
 	
+	const { state, dispatch } = activeEditorView;
+	const { schema } = state; // MODIFIED: Get schema from the active editor's state.
+	console.log(schema);
 	let cmd;
+	
 	switch (command) {
-		case 'bold':
-			cmd = toggleMark(schema.marks.strong);
+		case 'bold': cmd = toggleMark(schema.marks.strong); break;
+		case 'italic': cmd = toggleMark(schema.marks.em); break;
+		case 'underline': cmd = toggleMark(schema.marks.underline); break;
+		case 'strike': cmd = toggleMark(schema.marks.strike); break;
+		case 'blockquote': cmd = wrapIn(schema.nodes.blockquote); break;
+		case 'bullet_list': cmd = wrapInList(schema.nodes.bullet_list); break;
+		case 'ordered_list': cmd = wrapInList(schema.nodes.ordered_list); break;
+		case 'horizontal_rule':
+			dispatch(state.tr.replaceSelectionWith(schema.nodes.horizontal_rule.create()));
 			break;
-		case 'italic':
-			cmd = toggleMark(schema.marks.em);
+		case 'heading':
+			const { level } = attrs;
+			cmd = (level === 0)
+				? setBlockType(schema.nodes.paragraph)
+				: setBlockType(schema.nodes.heading, { level });
 			break;
-		case 'underline':
-			cmd = toggleMark(schema.marks.underline);
-			break;
-		default:
-			return;
 	}
 	
-	cmd(activeEditorView.state, activeEditorView.dispatch);
+	if (cmd) {
+		cmd(state, dispatch);
+	}
 }
 
 /**
  * Applies or removes a highlight to the selected text.
- * This first removes any existing highlights in the selection before applying the new one.
  * @param {string} color The color name (e.g., 'yellow', 'transparent').
  */
 function applyHighlight(color) {
 	if (!activeEditorView) return;
 	
-	const { from, to } = activeEditorView.state.selection;
-	let tr = activeEditorView.state.tr;
+	const { state } = activeEditorView; // MODIFIED: Get state once.
+	const { schema } = state; // MODIFIED: Get schema from the active editor's state.
+	const { from, to } = state.selection;
+	let tr = state.tr;
 	
 	// First, remove any existing highlight marks in the selection.
 	Object.keys(schema.marks).forEach(markName => {
@@ -123,6 +191,7 @@ async function handleAiAction(button) {
 	const model = modelSelect.value;
 	
 	const { state } = activeEditorView;
+	const { schema } = state; // MODIFIED: Get schema from the active editor's state.
 	const { from, to } = state.selection;
 	const text = state.doc.textBetween(from, to, ' ');
 	
@@ -164,14 +233,10 @@ async function handleAiAction(button) {
 }
 
 /**
- * Main click handler for all buttons on the toolbar.
- * @param {MouseEvent} event
+ * Main action handler for all buttons on the toolbar.
+ * @param {HTMLButtonElement} button The button element that was clicked.
  */
-async function handleToolbarClick(event) {
-	const button = event.target.closest('button');
-	if (!button) return;
-	
-	// Prevent running commands if no editor is active.
+async function handleToolbarAction(button) {
 	if (!activeEditorView && !button.closest('.js-dropdown-container')) {
 		return;
 	}
@@ -184,7 +249,7 @@ async function handleToolbarClick(event) {
 		} else if (command === 'redo') {
 			redo(activeEditorView.state, activeEditorView.dispatch);
 		} else {
-			applyFormatCommand(command);
+			applyCommand(command);
 		}
 	} else if (button.classList.contains('js-highlight-option')) {
 		applyHighlight(button.dataset.bg.replace('highlight-', ''));
@@ -192,30 +257,15 @@ async function handleToolbarClick(event) {
 	} else if (button.classList.contains('js-ai-apply-btn')) {
 		await handleAiAction(button);
 		closeAllDropdowns();
+	} else if (button.classList.contains('js-heading-option')) {
+		const level = parseInt(button.dataset.level, 10);
+		applyCommand('heading', { level });
+		closeAllDropdowns();
 	}
 	
-	// After command, re-focus the editor.
+	// After any action, re-focus the editor.
 	if (activeEditorView) {
 		activeEditorView.focus();
-	}
-}
-
-/**
- * Manages the opening and closing of dropdown menus in the toolbar.
- * @param {MouseEvent} event
- */
-function handleDropdowns(event) {
-	const dropdownContainer = event.target.closest('.js-dropdown-container');
-	if (dropdownContainer) {
-		const dropdown = dropdownContainer.querySelector('.js-dropdown');
-		const isOpening = dropdown.classList.contains('hidden');
-		closeAllDropdowns();
-		if (isOpening) {
-			dropdown.classList.remove('hidden');
-		}
-	} else if (!event.target.closest('.js-dropdown')) {
-		// Close if clicking outside any dropdown.
-		closeAllDropdowns();
 	}
 }
 
@@ -232,11 +282,38 @@ function closeAllDropdowns() {
 export function setupTopToolbar() {
 	if (!toolbar) return;
 	
-	// Add click handlers for toolbar buttons.
-	toolbar.addEventListener('click', handleToolbarClick);
+	// Use a single mousedown listener on the toolbar to prevent the editor from losing focus.
+	toolbar.addEventListener('mousedown', event => {
+		event.preventDefault(); // This is the key to fixing the focus issue.
+		
+		const button = event.target.closest('button');
+		if (!button || button.disabled) return;
+		
+		// Handle dropdown toggling
+		const dropdownContainer = button.closest('.js-dropdown-container');
+		if (dropdownContainer) {
+			const dropdown = dropdownContainer.querySelector('.js-dropdown');
+			if (dropdown) {
+				const isOpening = dropdown.classList.contains('hidden');
+				closeAllDropdowns();
+				if (isOpening) {
+					dropdown.classList.remove('hidden');
+				}
+				// Don't process the dropdown button itself as an action
+				if (button.classList.contains('js-toolbar-btn')) return;
+			}
+		}
+		
+		// Handle all other button actions
+		handleToolbarAction(button);
+	});
 	
-	// Dropdown handling for highlight and AI menus.
-	document.body.addEventListener('click', handleDropdowns);
+	// Add a listener to the body to close dropdowns when clicking elsewhere.
+	document.body.addEventListener('mousedown', event => {
+		if (!event.target.closest('#top-toolbar')) {
+			closeAllDropdowns();
+		}
+	});
 	
 	// Set initial disabled state.
 	updateToolbarState(null);

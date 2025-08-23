@@ -7,9 +7,11 @@ import { EditorState, Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Schema, DOMParser, DOMSerializer } from 'prosemirror-model';
 import { schema as basicSchema } from 'prosemirror-schema-basic';
+import { addListNodes } from 'prosemirror-schema-list';
 import { history, undo, redo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
-import { baseKeymap } from 'prosemirror-commands';
+// MODIFIED: Import toggleMark to rebuild keybindings, and baseKeymap for the rest.
+import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { updateToolbarState } from './toolbar.js';
 
 // --- STATE MANAGEMENT ---
@@ -27,12 +29,60 @@ const highlightMarkSpec = (colorClass) => ({
 
 // The main schema for the 'content' field, with added marks for underline and highlights.
 export const schema = new Schema({
-	nodes: basicSchema.spec.nodes,
+	nodes: addListNodes(basicSchema.spec.nodes, 'paragraph block*', 'block'),
 	marks: {
-		...basicSchema.spec.marks,
+		// MODIFIED: Replaced `...basicSchema.spec.marks` with explicit definitions.
+		// This resolves an issue where `strong` and `em` marks were not being
+		// correctly added to the schema, causing errors in the toolbar.
+		
+		// From prosemirror-schema-basic
+		link: {
+			attrs: {
+				href: {},
+				title: { default: null },
+			},
+			inclusive: false,
+			parseDOM: [{
+				tag: 'a[href]', getAttrs(dom) {
+					return { href: dom.getAttribute('href'), title: dom.getAttribute('title') };
+				},
+			}],
+			toDOM(node) { return ['a', node.attrs, 0]; },
+		},
+		
+		// From prosemirror-schema-basic
+		em: {
+			parseDOM: [{ tag: 'i' }, { tag: 'em' }, { style: 'font-style=italic' }],
+			toDOM() { return ['em', 0]; },
+		},
+		
+		// From prosemirror-schema-basic
+		strong: {
+			parseDOM: [
+				{ tag: 'strong' },
+				// This works around a Google Docs misbehavior where
+				// pasted content will be inexplicably wrapped in `<b>`
+				// tags with a font-weight normal.
+				{ tag: 'b', getAttrs: node => node.style.fontWeight != 'normal' && null },
+				{ style: 'font-weight', getAttrs: value => /^(bold(er)?|[5-9]\d{2,})$/.test(value) && null },
+			],
+			toDOM() { return ['strong', 0]; },
+		},
+		
+		// From prosemirror-schema-basic
+		code: {
+			parseDOM: [{ tag: 'code' }],
+			toDOM() { return ['code', 0]; },
+		},
+		
+		// Custom marks
 		underline: {
 			parseDOM: [{ tag: 'u' }, { style: 'text-decoration=underline' }],
 			toDOM: () => ['u', 0],
+		},
+		strike: {
+			parseDOM: [{ tag: 's' }, { tag: 'del' }, { style: 'text-decoration=line-through' }],
+			toDOM: () => ['s', 0],
 		},
 		highlight_yellow: highlightMarkSpec('highlight-yellow'),
 		highlight_green: highlightMarkSpec('highlight-green'),
@@ -158,13 +208,24 @@ function initEditorsForWindow(windowContent) {
 		// Parse the initial content from the hidden div.
 		const doc = DOMParser.fromSchema(currentSchema).parse(initialContentEl);
 		
+		// MODIFIED: Rebuild the base keymap to use marks from our custom schema.
+		// This is crucial because the default baseKeymap is bound to the original
+		// basicSchema instance, and our new schema has different mark instances.
+		const customKeymap = {
+			...baseKeymap,
+			'Mod-b': toggleMark(schema.marks.strong),
+			'Mod-B': toggleMark(schema.marks.strong),
+			'Mod-i': toggleMark(schema.marks.em),
+			'Mod-I': toggleMark(schema.marks.em),
+		};
+		
 		const view = new EditorView(mount, {
 			state: EditorState.create({
 				doc,
 				plugins: [
 					history(),
 					keymap({ 'Mod-z': undo, 'Mod-y': redo, 'Shift-Mod-z': redo }),
-					keymap(baseKeymap),
+					keymap(customKeymap), // Use our rebuilt keymap
 					isDescription ? keymap({ 'Enter': () => true }) : keymap({}), // Prevent newlines in description
 					new Plugin({
 						props: {
@@ -174,8 +235,8 @@ function initEditorsForWindow(windowContent) {
 									updateToolbarState(view);
 								},
 								blur(view, event) {
-									// Don't deactivate if focus is moving to the toolbar.
-									if (!event.relatedTarget || !event.relatedTarget.closest('#top-toolbar')) {
+									const relatedTarget = event.relatedTarget;
+									if (!relatedTarget || !relatedTarget.closest('#top-toolbar')) {
 										activeEditorView = null;
 										updateToolbarState(null);
 									}
@@ -198,7 +259,9 @@ function initEditorsForWindow(windowContent) {
 					triggerDebouncedSave(windowContent);
 				}
 				// If selection or content changed, update the toolbar state.
-				if ((transaction.selectionSet || transaction.docChanged) && view.hasFocus()) {
+				if ((transaction.selectionSet || transaction.docChanged)) {
+					// MODIFIED: No need to check hasFocus() here, as the blur event handles deactivation.
+					// This ensures the toolbar updates correctly even after a command is dispatched.
 					updateToolbarState(view);
 				}
 			},
