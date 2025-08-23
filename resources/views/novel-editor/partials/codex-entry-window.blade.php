@@ -16,17 +16,20 @@
 			<div class="flex-shrink-0 prose-sm dark:prose-invert max-w-none">
 				<input type="text" name="title" value="{{ $codexEntry->title }}" class="js-codex-title-input text-2xl font-bold w-full bg-transparent border-0 p-0 focus:ring-0 focus:border-b-2 focus:border-teal-500" placeholder="Codex Entry Title">
 				
-				<div class="js-codex-editable lead mt-2" data-name="description" contenteditable="true" data-placeholder="Enter a short summary...">{{ $codexEntry->description }}</div>
+				{{-- MODIFIED: Replaced contenteditable div with a ProseMirror mount point --}}
+				<div class="js-codex-editable lead mt-2 relative" data-name="description" data-placeholder="Enter a short summary..."></div>
 			</div>
 			
-			<div class="mt-4 flex-grow overflow-y-auto prose prose-sm dark:prose-invert max-w-none js-codex-editable" data-name="content" contenteditable="true" data-placeholder="Enter detailed content here...">
-				@if($codexEntry->content)
-					{!! $codexEntry->content !!}
-				@else
-					{{-- Empty for placeholder to work --}}
-				@endif
+			{{-- MODIFIED: Replaced contenteditable div with a ProseMirror mount point --}}
+			<div class="mt-4 flex-grow overflow-y-auto prose prose-sm dark:prose-invert max-w-none js-codex-editable relative" data-name="content" data-placeholder="Enter detailed content here...">
 			</div>
 		</div>
+	</div>
+	
+	{{-- NEW: Hidden container for initial content to be parsed by ProseMirror --}}
+	<div class="js-pm-content hidden">
+		<div data-name="description">{{ $codexEntry->description }}</div>
+		<div data-name="content">{!! $codexEntry->content !!}</div>
 	</div>
 	
 	{{-- Section to display linked codex entries as tags. --}}

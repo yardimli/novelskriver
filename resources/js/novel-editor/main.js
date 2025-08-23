@@ -3,6 +3,7 @@ import { setupCodexEntryHandler, setupChapterHandler, setupThemeToggle, setupOpe
 import { setupChapterEditor } from './chapter-editor.js';
 import { setupCodexContentEditor } from './codex-content-editor.js';
 import { setupTopToolbar } from './toolbar.js';
+import './codex-entry-editor.js'; // NEW: Import for side-effects (attaches event listeners)
 
 /**
  * Initializes the novel editor's multi-window desktop environment.

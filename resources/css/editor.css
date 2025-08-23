@@ -1,3 +1,4 @@
+/* resources/css/editor.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -62,15 +63,12 @@
 .window-element {
     cursor: pointer;
 }
-.window-element [contenteditable="true"] {
+/* MODIFIED: Point cursor to ProseMirror editor */
+.window-element .ProseMirror {
     cursor: text;
 }
 
-/* Styles for contenteditable placeholders */
-[contenteditable][data-placeholder]:empty:before {
-    content: attr(data-placeholder);
-    @apply text-gray-400 dark:text-gray-500 italic pointer-events-none;
-}
+/* DELETED: Old contenteditable placeholder styles */
 
 /* Styles for the top toolbar */
 #top-toolbar .js-toolbar-btn {
@@ -101,4 +99,45 @@
 .highlight-red {
     background-color: #fecaca;
     color: #7f1d1d;
+}
+
+/* NEW: Styles for ProseMirror editor */
+.ProseMirror {
+    @apply h-full focus:outline-none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    @apply text-gray-400 dark:text-gray-500 italic pointer-events-none h-0;
+}
+
+/* Ensure prose styles apply inside the editor without extra padding or focus rings */
+.prose .ProseMirror {
+    @apply p-0 focus:ring-0;
+}
+
+/* NEW: Custom scrollbar styles for dark mode */
+/* For Webkit-based browsers (Chrome, Safari, Edge) */
+.dark ::-webkit-scrollbar {
+    @apply w-3 h-3;
+}
+
+.dark ::-webkit-scrollbar-track {
+    @apply bg-gray-800;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    @apply bg-gray-600 rounded-full border-2 border-solid border-gray-800;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+}
+
+/* For Firefox */
+.dark .overflow-auto,
+.dark .overflow-y-auto {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.gray.600') theme('colors.gray.800');
 }

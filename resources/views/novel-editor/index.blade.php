@@ -30,18 +30,15 @@
 	<link href="{{ asset('theme/assets/libs/bootstrap-icons/font/bootstrap-icons.min.css') }}" rel="stylesheet" />
 	<link rel="stylesheet" href="{{ asset('theme/assets/fonts/css/boxicons.min.css') }}" />
 	
-	<script type="module" src="{{ asset('/js/novel-editor/main.js') }}"></script>
-	<script type="module" src="{{ asset('/js/novel-editor/toolbar.js') }}"></script>
-	<script src="{{ asset('/js/novel-editor/codex-entry-editor.js') }}"></script>
-	
-	@vite(['resources/css/editor.css'])
+	{{-- MODIFIED: Use the @vite directive to load all assets --}}
+	@vite(['resources/css/editor.css', 'resources/js/novel-editor/main.js'])
 
 </head>
 <body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden select-none flex flex-col"
       data-novel-id="{{ $novel->id }}"
       data-editor-state="{{ json_encode($novel->editor_state) }}">
 
-{{-- NEW: Top toolbar, always visible. --}}
+{{-- Top toolbar, always visible. --}}
 <div id="top-toolbar" class="flex-shrink-0 h-12 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center px-4 gap-4 z-50 border-b border-gray-200 dark:border-gray-700">
 	{{-- History Section --}}
 	<div class="flex items-center gap-1">
